@@ -17,7 +17,7 @@
 			<url>http://oss.sonatype.org/content/repositories/github-releases/</url>
 		</repository>
 		<repository>
-			<id>clojars.org</id>
+			<id>clojars</id>
 			<url>http://clojars.org/repo</url>
 		</repository>
 	</repositories>
@@ -61,6 +61,11 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>net.wurstmeister.storm</groupId>
+			<artifactId>storm-kafka-0.8-plus</artifactId>
+			<version>0.2.0</version>
+		</dependency>
+		<dependency>
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>3.2.1</version>
@@ -71,7 +76,6 @@
 			<version>15.0</version>
 		</dependency>
 	</dependencies>
-
 	<build>
 		<sourceDirectory>src/jvm</sourceDirectory>
 		<testSourceDirectory>test/jvm</testSourceDirectory>
