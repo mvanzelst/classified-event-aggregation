@@ -1,69 +1,86 @@
 package org.classified_event_aggregation.storm_input_topology;
 
-import storm.kafka.BrokerHosts;
+import java.lang.reflect.Type;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import kafka.cluster.Broker;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import storm.kafka.HostPort;
+import storm.kafka.KafkaConfig.BrokerHosts;
+import storm.kafka.KafkaConfig.StaticHosts;
 import storm.kafka.KafkaSpout;
 import storm.kafka.SpoutConfig;
-import storm.kafka.StaticHosts;
-import storm.kafka.trident.GlobalPartitionInformation;
-import storm.trident.TridentState;
 import storm.trident.TridentTopology;
 import storm.trident.operation.BaseFunction;
 import storm.trident.operation.TridentCollector;
-import storm.trident.operation.builtin.Count;
-import storm.trident.operation.builtin.FilterNull;
-import storm.trident.operation.builtin.MapGet;
-import storm.trident.operation.builtin.Sum;
-import storm.trident.testing.MemoryMapState;
 import storm.trident.tuple.TridentTuple;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
-import backtype.storm.LocalDRPC;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.StormTopology;
+import backtype.storm.spout.RawMultiScheme;
+import backtype.storm.spout.RawScheme;
+import backtype.storm.spout.Scheme;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
+
 public class TridentClassifiedEvents {
-	public static class Split extends BaseFunction {
+	
+	private final Logger log = LoggerFactory.getLogger(getClass());
+	
+	public static class ParseJSON extends BaseFunction {
+		private final Logger log = LoggerFactory.getLogger(getClass());
+		
 		@Override
-		public void execute(TridentTuple tuple, TridentCollector collector) {
-			String sentence = tuple.getString(0);
-			for (String word : sentence.split(" ")) {
-				collector.emit(new Values(word));
+		public final void execute(
+			final TridentTuple tuple,
+			final TridentCollector collector
+		) {
+			byte[] bytes = tuple.getBinary(0);
+			String decoded = new String(bytes, Charset.forName("UTF-8"));
+			System.out.println(decoded);
+			Gson gson = new Gson();
+			Type type = new TypeToken<Map<String, String>>(){}.getType();
+			Map<String, String> map;
+			try {
+				map = gson.fromJson(decoded, type);
+			} catch (JsonSyntaxException e){
+				log.error("Failed to parse json string: " + decoded, e);
+				return;
 			}
+			collector.emit(new Values(
+				map.get("description"),
+				map.get("timestamp"),
+				Arrays.asList(map.get("tags").split(" "))
+			));
 		}
 	}
 
-	public static StormTopology buildTopology(LocalDRPC drpc) {
-		GlobalPartitionInformation hostsAndPartitions = new GlobalPartitionInformation();
-		hostsAndPartitions.addPartition(0, new HostPort("localhost", 9092));
-		BrokerHosts brokerHosts = new StaticHosts(hostsAndPartitions);
-		SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, // list of Kafka
-																// brokers
-				"test", // number of partitions per host
-				"/kafkastorm", // the root path in Zookeeper for the spout to
-								// store the consumer offsets
-				"discovery"); // an id for this consumer for storing the
-								// consumer offsets in Zookeeper
+	public static StormTopology buildTopology() {
+		BrokerHosts brokerHosts = new StaticHosts(Arrays.asList(new HostPort("localhost", 9092)), 1);
+		SpoutConfig spoutConfig = new SpoutConfig(
+			brokerHosts, // list of Kafka
+			"test", // topic
+			"/kafkastorm", // the root path in Zookeeper for the spout to store the consumer offsets
+			"discovery" // an id for this consumer for storing the consumer offsets in Zookeeper
+		); 
+		spoutConfig.scheme = new RawScheme();
 		KafkaSpout kafkaSpout = new KafkaSpout(spoutConfig);
-
 		TridentTopology topology = new TridentTopology();
-		TridentState wordCounts = topology
+		topology
 				.newStream("spout1", kafkaSpout)
-				.parallelismHint(16)
-				.each(new Fields("sentence"), new Split(), new Fields("word"))
-				.groupBy(new Fields("word"))
-				.persistentAggregate(new MemoryMapState.Factory(), new Count(),
-						new Fields("count")).parallelismHint(16);
-
-		topology.newDRPCStream("words", drpc)
-				.each(new Fields("args"), new Split(), new Fields("word"))
-				.groupBy(new Fields("word"))
-				.stateQuery(wordCounts, new Fields("word"), new MapGet(),
-						new Fields("count"))
-				.each(new Fields("count"), new FilterNull())
-				.aggregate(new Fields("count"), new Sum(), new Fields("sum"));
+				.parallelismHint(1)
+				.each(new Fields("bytes"), new ParseJSON(), new Fields("description", "timestamp", "tags"));
 		return topology.build();
 	}
 
@@ -71,17 +88,11 @@ public class TridentClassifiedEvents {
 		Config conf = new Config();
 		conf.setMaxSpoutPending(20);
 		if (args.length == 0) {
-			LocalDRPC drpc = new LocalDRPC();
 			LocalCluster cluster = new LocalCluster();
-			cluster.submitTopology("wordCounter", conf, buildTopology(drpc));
-			for (int i = 0; i < 100; i++) {
-				System.out.println("DRPC RESULT: "
-						+ drpc.execute("words", "cat the dog jumped"));
-				Thread.sleep(1000);
-			}
+			cluster.submitTopology("classifiedEventProcessor", conf, buildTopology());
 		} else {
 			conf.setNumWorkers(3);
-			StormSubmitter.submitTopology(args[0], conf, buildTopology(null));
+			StormSubmitter.submitTopology(args[0], conf, buildTopology());
 		}
 	}
 }
