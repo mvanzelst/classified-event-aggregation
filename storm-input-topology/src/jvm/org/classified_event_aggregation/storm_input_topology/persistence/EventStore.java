@@ -13,5 +13,5 @@ public interface EventStore extends State {
 
 	public void storeClassifiedEvent(ClassifiedEvent event);
 
-	public void incrementClassificationCounter(Classification classification, Long timestamp);
+	void incrementClassificationCounter(Classification classification, Long timestamp, Long amount);
 }
