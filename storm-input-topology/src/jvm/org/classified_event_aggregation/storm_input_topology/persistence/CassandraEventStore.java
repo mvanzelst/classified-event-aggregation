@@ -10,6 +10,8 @@ import scala.actors.threadpool.Arrays;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
 public class CassandraEventStore implements EventStore {
@@ -19,22 +21,13 @@ public class CassandraEventStore implements EventStore {
 	private Config config;
 
 	private PreparedStatement insertTimelineStmt;
-	private PreparedStatement eventCounterByClassificationKeyStmt;
-	private PreparedStatement eventCounterByClassificationStmt;
+	private PreparedStatement setEventCounterByClassificationKeyStmt;
+	private PreparedStatement setEventCounterByClassificationStmt;
+	private PreparedStatement getEventCounterByClassificationStmt;
+	private Long txid;
 	
 	public static class Config {
 		public String node;
-
-		@SuppressWarnings("unchecked")
-		public Collection<TimePeriod> timePeriods = 
-			Arrays.asList(new TimePeriod[]{
-				TimePeriod.YEAR,
-				TimePeriod.MONTH,
-				TimePeriod.WEEK,
-				TimePeriod.DATE,
-				TimePeriod.HOUR,
-				TimePeriod.MINUTE
-			});
 	}
 
 	/**
@@ -47,22 +40,34 @@ public class CassandraEventStore implements EventStore {
 		createTablesAndKeySpace();
 		session = cluster.connect("cea");
 		insertTimelineStmt = session.prepare("INSERT INTO event_timeline (timestamp, classification, description) VALUES (?, ?, ?)");
-		eventCounterByClassificationKeyStmt = session.prepare(
+		setEventCounterByClassificationKeyStmt = session.prepare(
 			"UPDATE event_counters_by_classification_key SET " +
-				"counter = counter + ? " +
+				"counter = ?, " +
+				"txid = ?, " +
+				"last_description = ? " +
 			"WHERE " + 
 				"period_type_name = ? AND " +
 				"period_start = ? AND " +
 				"classification_key = ? AND " +
 				"classification_value = ?;"
 		);
-		eventCounterByClassificationStmt = session.prepare(
+		setEventCounterByClassificationStmt = session.prepare(
 			"UPDATE event_counters_by_classification SET " +
-				"counter = counter + ? " +
+					"counter = ?, " +
+					"txid = ?, " +
+					"last_description = ? " +
 			"WHERE " + 
 				"period_type_name = ? AND " +
 				"period_start = ? AND " +
 				"classification = ?;"
+		);
+		getEventCounterByClassificationStmt = session.prepare(
+			"SELECT counter " +
+			"FROM event_counters_by_classification " +
+			"WHERE " + 
+				"period_type_name = ? AND " +
+				"period_start = ? AND " +
+				"classification = ?"
 		);
 	}
 
@@ -76,7 +81,7 @@ public class CassandraEventStore implements EventStore {
 
 		session.shutdown();
 		session = cluster.connect("cea");
-		
+
 		// Create event_counters table
 		session.execute(
 			"CREATE TABLE IF NOT EXISTS event_counters_by_classification_key ( " + 
@@ -84,23 +89,25 @@ public class CassandraEventStore implements EventStore {
 				"period_start bigint, " +
 				"classification_key text, " +
 				"classification_value text, " +
-				"counter counter, " +
-				// "txid bigint, " +
+				"counter bigint, " +
+				"txid bigint, " +
+				"last_description text, " +
 				"PRIMARY KEY ((classification_key, period_type_name), period_start, classification_value) " +
 			") WITH CLUSTERING ORDER BY (period_start ASC, classification_value ASC);"
 		);
-		
+
 		session.execute(
 			"CREATE TABLE IF NOT EXISTS event_counters_by_classification ( " + 
 				"period_type_name text, " +
 				"period_start bigint, " +
 				"classification text, " +
-				"counter counter, " +
-				// "txid bigint, " +
+				"counter bigint, " +
+				"txid bigint, " +
+				"last_description text, " +
 				"PRIMARY KEY ((classification, period_type_name), period_start) " +
 			") WITH CLUSTERING ORDER BY (period_start ASC);"
 		);
-		
+
 		// Create event_timeline table
 		session.execute(
 			"CREATE TABLE IF NOT EXISTS event_timeline ( " + 
@@ -121,37 +128,37 @@ public class CassandraEventStore implements EventStore {
 
 	@Override
 	public void beginCommit(Long txid) {
-		
-		
-		
+		this.txid = txid;
 	}
 
 	@Override
 	public void commit(Long txid) {
+		this.txid = null;
 	}
 
-
 	@Override
-	public void incrementClassificationCounter(Classification classification, Long timestamp, Long amount) {
-		for (TimePeriod timePeriod : config.timePeriods) {
-			session.execute(
-				eventCounterByClassificationKeyStmt.bind(
-					amount,
-					timePeriod.getName(),
-					timePeriod.convertToStartOfPeriod(timestamp),
-					classification.getKey(),
-					classification.getValue()
-				)
-			);
-			session.execute(
-				eventCounterByClassificationStmt.bind(
-					amount,
-					timePeriod.getName(),
-					timePeriod.convertToStartOfPeriod(timestamp),
-					classification.toString()
-				)
-			);
-		}
+	public void setClassificationCounter(String periodTypeName, Long periodStart, String lastDescription, Classification classification, Long amount) {
+		session.execute(
+			setEventCounterByClassificationKeyStmt.bind(
+				amount,
+				this.txid,
+				lastDescription,
+				periodTypeName,
+				periodStart,
+				classification.getKey(),
+				classification.getValue()
+			)
+		);
+		session.execute(
+			setEventCounterByClassificationStmt.bind(
+				amount,
+				this.txid,
+				lastDescription,
+				periodTypeName,
+				periodStart,
+				classification.toString()
+			)
+		);
 	}
 
 	@Override
@@ -166,6 +173,22 @@ public class CassandraEventStore implements EventStore {
 				)
 			);
 		}
+	}
+
+	@Override
+	public Long getClassificationCounter(String periodTypeName, Long periodStart, Classification classification) {
+		ResultSet result = session.execute(
+			getEventCounterByClassificationStmt.bind(
+				periodTypeName,
+				periodStart,
+				classification.toString()
+			)
+		);
+		Row row = result.one();
+		if(result.one() == null){
+			return 0L;
+		}
+		return row.getLong(0);
 	}
 
 }

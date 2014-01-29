@@ -18,7 +18,7 @@ public class TestSpoutFactory {
 	public static FixedBatchSpout build() {
 		FixedBatchSpout spout = new FixedBatchSpout(
 			new Fields("bytes"), 
-			500, 
+			10, 
 			getValue(),
 			getValue(),
 			getValue(),

@@ -14,7 +14,7 @@ public class EventStoreStateFactory implements StateFactory {
 	public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
 		if("cassandra".contentEquals((String) conf.get("databaseType"))){
 			// @todo make configurable
-			return new CassandraEventStore();
+			return new EventStoreCache(new CassandraEventStore());
 		} else {
 			throw new RuntimeException("Unsupported database type");
 		}

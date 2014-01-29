@@ -10,9 +10,9 @@ public class Classification {
 		this.value = value;
 	}
 	
-	public Classification(String value) {
-		this.value = value;
-		this.key = "";
+	public Classification(String key) {
+		this.value = "_EMPTY_";
+		this.key = key;
 	}
 	
 	@Override
@@ -33,11 +33,7 @@ public class Classification {
 	
 	@Override
 	public String toString() {
-		if(key.isEmpty()){
-			return "#" + value;
-		} else {
-			return "#" + key + ":" + value;
-		}
+		return "#" + key + ":" + value;
 	}
 	
 	public static Classification fromString(String input){

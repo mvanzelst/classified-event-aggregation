@@ -20,12 +20,15 @@ import com.google.gson.reflect.TypeToken;
 @SuppressWarnings("serial")
 public class ParseJSON extends BaseFunction {
 	private final Logger log = LoggerFactory.getLogger(getClass());
+	private long counter = 0L;
+	private long timer = System.currentTimeMillis();
 	
 	@Override
 	public final void execute(
 		final TridentTuple tuple,
 		final TridentCollector collector
 	) {
+		statsHook();
 		byte[] bytes = tuple.getBinary(0);
 		String decoded = new String(bytes, Charset.forName("UTF-8"));
 		if(log.isTraceEnabled()){
@@ -47,5 +50,13 @@ public class ParseJSON extends BaseFunction {
 			Long.parseLong(map.get("timestamp")),
 			Arrays.asList(map.get("classifications").split(" "))
 		));
+	}
+	
+	public void statsHook(){
+		counter++;
+		if(counter % 500 == 0){
+			System.out.println("processed " + counter + ", the last 500 took: " +  (System.currentTimeMillis() - timer) + "ms");
+			timer = System.currentTimeMillis();
+		}
 	}
 }

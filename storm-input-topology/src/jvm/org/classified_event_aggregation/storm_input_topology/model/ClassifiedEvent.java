@@ -51,4 +51,16 @@ public class ClassifiedEvent {
 		}
 		return derivedEvents;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		Event tempEvent = event;
+		for (Classification classification : classifications) {
+			tempEvent = tempEvent.addClassificationToDescription(classification);
+		}
+		sb.append(tempEvent.getDescription());
+		
+		return sb.toString();
+	}
 }
