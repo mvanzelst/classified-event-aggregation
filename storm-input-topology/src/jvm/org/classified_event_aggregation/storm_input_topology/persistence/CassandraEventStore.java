@@ -122,7 +122,7 @@ public class CassandraEventStore implements EventStore {
 	
 	public void dropTablesAndKeySpace(){
 		Session session = cluster.connect();
-		session.execute("DROP KEYSPACE cea");
+		session.execute("DROP KEYSPACE IF EXISTS cea");
 		session.shutdown();
 	}
 
