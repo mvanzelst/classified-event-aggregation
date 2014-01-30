@@ -12,11 +12,14 @@
         http://www.springframework.org/schema/mvc 
         http://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
+	<mvc:annotation-driven />
+
+	<context:component-scan base-package="org.classified_event_aggregation.web.controller" />
+
 	<!--  Static resources -->
     <mvc:resources mapping="/css/**" location="/static/css/" />
     <mvc:resources mapping="/js/**" location="/static/js/" />
     <mvc:resources mapping="/images/**" location="/static/images/" />
-	<mvc:default-servlet-handler />
 
-    <context:component-scan base-package="org.classified_event_aggregation.web.controller" />
+    
 </beans>
