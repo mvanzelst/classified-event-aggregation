@@ -85,168 +85,324 @@
 
 <script>
 
-function getValuesPerKey(key){
-	
+Array.prototype.compare = function(arr) {
+    if (this.length != arr.length) return false;
+    for (var i = 0; i < arr.length; i++) {
+        if (this[i].compare) { 
+            if (!this[i].compare(arr[i])) return false;
+        }
+        if (this[i] !== arr[i]) return false;
+    }
+    return true;
 }
 
-// set up our data series with 150 random data points
 
-var seriesData = [ [], [], [], [], [], [], [], [], [] ];
-var random = new Rickshaw.Fixtures.RandomData(150);
 
-for (var i = 0; i < 150; i++) {
-	random.addData(seriesData);
+/* 
+	Convert from: 
+		[
+			{
+				"period_start": 1460498400000,
+				"counter": 1,
+				"classification_value": "Warn"
+			},
+			{
+				"period_start": 1460498400000,
+				"counter": 1,
+				"classification_value": "Error"
+			}
+		]
+	to:
+		{
+			"Warn": [
+				{
+					"x": 1460498400000, 
+					"y": 1
+				}
+			],
+			"Error": [
+				{
+					"x": 1460498400000, 
+					"y": 1
+				}
+			]
+		}
+*/
+function convertToDataByClassification(data){
+	var sets = {};
+	data.forEach(function(entry) {
+		if(sets[entry.classification_value] === undefined){
+			sets[entry.classification_value] = [];
+		}
+		sets[entry.classification_value].push({x: entry.period_start, y: entry.counter});
+	});
+	return sets;
+}
+
+function zeroFillData(dataByClassification){
+	var uniqueXs = [];
+	Object.keys(dataByClassification).forEach(function(key) {
+		dataByClassification[key].forEach(function(entry) {
+			if(uniqueXs.indexOf(entry.x) === -1){
+				uniqueXs.push(entry.x);
+			}
+		});
+	});
+	Object.keys(dataByClassification).forEach(function(key) {
+		uniqueXs.forEach(function(x, i) {
+			var amount = $.grep(dataByClassification[key], function(entry) {
+				return entry.x === x;
+			}).length;
+			if(amount === 0){
+				dataByClassification[key].push({x: x, y: 0});
+			}
+		});
+	});
+}
+
+function sortData(dataByClassification){
+	Object.keys(dataByClassification).forEach(function(key) {
+		dataByClassification[key].sort(function(a, b){
+			return a.x < b.x ? -1 : a.x > b.x ? 1 : 0;
+		});
+	});
+}
+
+function addDataToSeries(currentSeries, dataByClassification){
+	Object.keys(dataByClassification).forEach(function(key) {
+		var series = $.grep(currentSeries, function(entry) {
+			return entry.name === key;
+		});
+		if(series.length === 0){
+			currentSeries.push({
+				color: palette.color(),
+				data: dataByClassification[key],
+				name: key
+			});
+		} else {
+			series[0].data = dataByClassification[key];
+		}
+	});
+}
+
+function sliceSeries(series, start, end){
+	Object.keys(series).forEach(function(key) {
+		series[key] = series[key].slice(start, end);
+	});
+}
+
+function mergeDataSeries(seriesA, seriesB){
+	var newSeries = {};
+	
+	// Add serieA to newSeries
+	Object.keys(seriesA).forEach(function(key) {
+		if(newSeries[key] === undefined){
+			newSeries[key] = [];
+		}
+		
+		seriesA[key].forEach(function(entryA) {
+			var amount = $.grep(newSeries[key], function(entryNew) {
+				return entryA.x === entryNew.x;
+			}).length;
+			if(amount === 0){
+				newSeries[key].push({x: entryA.x, y: entryA.y});
+			}
+		});
+	});
+
+	// Add serieB to newSeries
+	Object.keys(seriesB).forEach(function(key) {
+		if(newSeries[key] === undefined){
+			newSeries[key] = [];
+		}
+		seriesB[key].forEach(function(entryB) {
+			var amount = $.grep(newSeries[key], function(entryNew) {
+				return entryB.x === entryNew.x;
+			}).length;
+			if(amount === 0){
+				newSeries[key].push({x: entryB.x, y: entryB.y});
+			}
+		});
+	});
+	return newSeries;
+}
+
+updateGraph("LogLevel");
+setInterval(function(){updateGraph("LogLevel");}, 200);
+
+var lastDataSeries;
+var keys;
+var graphSeries;
+var graph;
+function updateGraph(classificationKey){
+	$.ajax({
+		url: "http://localhost:8080/frontend-web/classification/" + classificationKey + "/date/values?reverse=true",
+		success: function(data) {
+			var currentDataSeries = convertToDataByClassification(data);
+			if(graph === undefined){
+				zeroFillData(currentDataSeries);
+				sortData(currentDataSeries);
+
+				// Only keep latest 10 data points
+				sliceSeries(currentDataSeries, -100);
+
+				var series = [];
+				addDataToSeries(series, currentDataSeries);
+				initiateGraph(series);
+				lastDataSeries = currentDataSeries;
+			} else {
+				// Merge the latest dataset with the previous one
+				var mergedData = mergeDataSeries(currentDataSeries, lastDataSeries);
+				zeroFillData(mergedData);
+				sortData(mergedData);
+
+				// Only keep latest 10 data points
+				sliceSeries(mergedData, -100);
+
+				// Add data to existing series
+				addDataToSeries(graph.series, mergedData);
+
+				// Reset all sub graphs and dependend elements
+
+				// Update the graph
+				graph.update();
+
+				// Store the merged set for future use
+				lastDataSeries = mergedData;
+			}
+		}
+	});
+}
+
+function compareArray(arr1, arr2){
+	for (var i = 0; i < arr1.length; i++) {
+		for (var j = 0; j < arr2.length; j++) {
+			if (arr1[i] !== arr2[j]) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 var palette = new Rickshaw.Color.Palette( { scheme: 'classic9' } );
 
 // instantiate our graph!
+function initiateGraph(series){
+	graph = new Rickshaw.Graph({
+		element: document.getElementById("chart"),
+		width: 900,
+		height: 500,
+		renderer: 'area',
+		stroke: true,
+		preserve: true,
+		series: series
+	});
+	graph.render();
+	
+	var preview = new Rickshaw.Graph.RangeSlider.Preview( {
+		graph: graph,
+		element: document.getElementById('preview'),
+	} );
 
-var graph = new Rickshaw.Graph( {
-	element: document.getElementById("chart"),
-	width: 900,
-	height: 500,
-	renderer: 'area',
-	stroke: true,
-	preserve: true,
-	series: [
-		{
-			color: palette.color(),
-			data: seriesData[0],
-			name: 'Moscow'
-		}, {
-			color: palette.color(),
-			data: seriesData[1],
-			name: 'Shanghai'
-		}, {
-			color: palette.color(),
-			data: seriesData[2],
-			name: 'Amsterdam'
-		}, {
-			color: palette.color(),
-			data: seriesData[3],
-			name: 'Paris'
-		}, {
-			color: palette.color(),
-			data: seriesData[4],
-			name: 'Tokyo'
-		}, {
-			color: palette.color(),
-			data: seriesData[5],
-			name: 'London'
-		}, {
-			color: palette.color(),
-			data: seriesData[6],
-			name: 'New York'
+	var hoverDetail = new Rickshaw.Graph.HoverDetail( {
+		graph: graph,
+		xFormatter: function(x) {
+			return new Date(x).toString();
 		}
-	]
-} );
+	} );
 
-graph.render();
+	var annotator = new Rickshaw.Graph.Annotate( {
+		graph: graph,
+		element: document.getElementById('timeline')
+	} );
 
-var preview = new Rickshaw.Graph.RangeSlider.Preview( {
-	graph: graph,
-	element: document.getElementById('preview'),
-} );
+	var legend = new Rickshaw.Graph.Legend( {
+		graph: graph,
+		element: document.getElementById('legend')
 
-var hoverDetail = new Rickshaw.Graph.HoverDetail( {
-	graph: graph,
-	xFormatter: function(x) {
-		return new Date(x * 1000).toString();
-	}
-} );
+	} );
 
-var annotator = new Rickshaw.Graph.Annotate( {
-	graph: graph,
-	element: document.getElementById('timeline')
-} );
+	var shelving = new Rickshaw.Graph.Behavior.Series.Toggle( {
+		graph: graph,
+		legend: legend
+	} );
 
-var legend = new Rickshaw.Graph.Legend( {
-	graph: graph,
-	element: document.getElementById('legend')
+	var order = new Rickshaw.Graph.Behavior.Series.Order( {
+		graph: graph,
+		legend: legend
+	} );
 
-} );
+	var highlighter = new Rickshaw.Graph.Behavior.Series.Highlight( {
+		graph: graph,
+		legend: legend
+	} );
 
-var shelving = new Rickshaw.Graph.Behavior.Series.Toggle( {
-	graph: graph,
-	legend: legend
-} );
+	var smoother = new Rickshaw.Graph.Smoother( {
+		graph: graph,
+		element: $('#smoother')
+	} );
 
-var order = new Rickshaw.Graph.Behavior.Series.Order( {
-	graph: graph,
-	legend: legend
-} );
+	var ticksTreatment = 'glow';
 
-var highlighter = new Rickshaw.Graph.Behavior.Series.Highlight( {
-	graph: graph,
-	legend: legend
-} );
+	var xAxis = new Rickshaw.Graph.Axis.Time( {
+		graph: graph,
+		ticksTreatment: ticksTreatment,
+		timeFixture: new Rickshaw.Fixtures.Time.Local()
+	} );
 
-var smoother = new Rickshaw.Graph.Smoother( {
-	graph: graph,
-	element: $('#smoother')
-} );
+	xAxis.render();
 
-var ticksTreatment = 'glow';
+	var yAxis = new Rickshaw.Graph.Axis.Y( {
+		graph: graph,
+		tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+		ticksTreatment: ticksTreatment
+	} );
 
-var xAxis = new Rickshaw.Graph.Axis.Time( {
-	graph: graph,
-	ticksTreatment: ticksTreatment,
-	timeFixture: new Rickshaw.Fixtures.Time.Local()
-} );
-
-xAxis.render();
-
-var yAxis = new Rickshaw.Graph.Axis.Y( {
-	graph: graph,
-	tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-	ticksTreatment: ticksTreatment
-} );
-
-yAxis.render();
+	yAxis.render();
 
 
-var controls = new RenderControls( {
-	element: document.querySelector('form'),
-	graph: graph
-} );
+	var controls = new RenderControls( {
+		element: document.querySelector('form'),
+		graph: graph
+	} );
+	
+	// add some data every so often
 
-// add some data every so often
+	var messages = [
+		"Changed home page welcome message",
+		"Minified JS and CSS",
+		"Changed button color from blue to green",
+		"Refactored SQL query to use indexed columns",
+		"Added additional logging for debugging",
+		"Fixed typo",
+		"Rewrite conditional logic for clarity",
+		"Added documentation for new methods"
+	];
 
-var messages = [
-	"Changed home page welcome message",
-	"Minified JS and CSS",
-	"Changed button color from blue to green",
-	"Refactored SQL query to use indexed columns",
-	"Added additional logging for debugging",
-	"Fixed typo",
-	"Rewrite conditional logic for clarity",
-	"Added documentation for new methods"
-];
+	/*
+	function addAnnotation(force) {
+		if (messages.length > 0 && (force || Math.random() >= 0.95)) {
+			annotator.add(seriesData[2][seriesData[2].length-1].x, messages.shift());
+			annotator.update();
+		}
+	}*/
 
-setInterval( function() {
-	random.removeData(seriesData);
-	random.addData(seriesData);
-	graph.update();
-}, 500 );
+	//addAnnotation(true);
+	//setTimeout( function() { setInterval( addAnnotation, 6000 ) }, 6000 );
 
-function addAnnotation(force) {
-	if (messages.length > 0 && (force || Math.random() >= 0.95)) {
-		annotator.add(seriesData[2][seriesData[2].length-1].x, messages.shift());
-		annotator.update();
-	}
+	var previewXAxis = new Rickshaw.Graph.Axis.Time({
+		graph: preview.previews[0],
+		timeFixture: new Rickshaw.Fixtures.Time.Local(),
+		ticksTreatment: ticksTreatment
+	});
+
+	previewXAxis.render();
 }
 
-addAnnotation(true);
-setTimeout( function() { setInterval( addAnnotation, 6000 ) }, 6000 );
 
-var previewXAxis = new Rickshaw.Graph.Axis.Time({
-	graph: preview.previews[0],
-	timeFixture: new Rickshaw.Fixtures.Time.Local(),
-	ticksTreatment: ticksTreatment
-});
 
-previewXAxis.render();
+
 
 </script>
 

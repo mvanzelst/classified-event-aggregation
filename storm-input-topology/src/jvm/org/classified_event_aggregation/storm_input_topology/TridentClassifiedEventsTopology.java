@@ -1,10 +1,8 @@
 package org.classified_event_aggregation.storm_input_topology;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
-import org.classified_event_aggregation.storm_input_topology.persistence.CassandraEventStore;
 import org.classified_event_aggregation.storm_input_topology.persistence.EventStoreStateFactory;
 import org.classified_event_aggregation.storm_input_topology.persistence.EventStoreUpdater;
 import org.classified_event_aggregation.storm_input_topology.storm.ParseJSON;
@@ -16,7 +14,6 @@ import storm.kafka.HostPort;
 import storm.kafka.KafkaConfig.BrokerHosts;
 import storm.kafka.KafkaConfig.StaticHosts;
 import storm.kafka.SpoutConfig;
-import storm.trident.TridentState;
 import storm.trident.TridentTopology;
 import storm.trident.testing.FixedBatchSpout;
 import backtype.storm.Config;
@@ -27,6 +24,7 @@ import backtype.storm.spout.RawScheme;
 import backtype.storm.tuple.Fields;
 
 public class TridentClassifiedEventsTopology {
+	@SuppressWarnings("unused")
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	
 	public static StormTopology buildTopology(Map<String, Object> conf) {
@@ -54,8 +52,7 @@ public class TridentClassifiedEventsTopology {
 		// @todo Add database conf
 		Config topologyConf = new Config();
 		topologyConf.put("databaseType", "cassandra");
-		topologyConf.setMaxSpoutPending(20);
-		
+		topologyConf.setMaxSpoutPending(10);
 		if (args.length == 0) {
 			LocalCluster cluster = new LocalCluster();
 			cluster.submitTopology("classifiedEventProcessor", topologyConf, buildTopology(topologyConf));

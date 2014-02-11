@@ -4,9 +4,8 @@ import java.util.Collection;
 
 import org.classified_event_aggregation.storm_input_topology.model.Classification;
 import org.classified_event_aggregation.storm_input_topology.model.ClassifiedEvent;
-import org.classified_event_aggregation.storm_input_topology.model.time.TimePeriod;
-
-import scala.actors.threadpool.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.PreparedStatement;
@@ -29,6 +28,8 @@ public class CassandraEventStore implements EventStore {
 	public static class Config {
 		public String node;
 	}
+	
+	private static Logger logger = LoggerFactory.getLogger(CassandraEventStore.class);
 
 	/**
 	 * @todo Make configurable via storm conf
@@ -138,6 +139,7 @@ public class CassandraEventStore implements EventStore {
 
 	@Override
 	public void setClassificationCounter(String periodTypeName, Long periodStart, String lastDescription, Classification classification, Long amount) {
+		logger.trace(String.format("setClassificationCounter(periodTypeName: %s, periodStart: %d, lastDescription: %s, classification: %s, amount: %d)", periodTypeName, periodStart, lastDescription, classification.toString(), amount));
 		session.execute(
 			setEventCounterByClassificationKeyStmt.bind(
 				amount,

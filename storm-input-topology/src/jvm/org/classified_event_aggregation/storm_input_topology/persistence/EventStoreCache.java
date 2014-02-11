@@ -43,8 +43,9 @@ public class EventStoreCache implements EventStore {
 
 	@Override
 	public void setClassificationCounter(String periodTypeName, Long periodStart, String lastDescription, Classification classification, Long amount) {
+		String cacheKey = periodTypeName + "_" + periodStart + "_" + classification;
 		// Store in cache
-		Element element = new Element(classification.toString(), (long) amount);
+		Element element = new Element(cacheKey, (long) amount);
 		cache.put(element);
 		decoratedEventStore.setClassificationCounter(periodTypeName, periodStart, lastDescription, classification, amount);
 	}
