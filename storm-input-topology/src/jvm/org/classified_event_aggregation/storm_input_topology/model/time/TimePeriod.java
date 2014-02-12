@@ -10,7 +10,9 @@ public enum TimePeriod {
 	WEEK("week", "x'-W'ww"), // 2014-W04
 	DATE("date", "y-MM-dd"), // 2014-01-25
 	HOUR("hour", "y-MM-dd 'H-'HH"), // 2014-01-25 H01
-	MINUTE("minute", "y-MM-dd HH:mm"); // 2014-01-25 01:15
+	MINUTE("minute", "y-MM-dd HH:mm"), // 2014-01-25 01:15
+	SECOND("second", "y-MM-dd HH:mm:ss"); // 2014-01-25 01:15:00
+	
 
 	private final String name;
 	private final String format;
@@ -53,6 +55,8 @@ public enum TimePeriod {
 				return dt.withMinuteOfHour(0).withMillisOfSecond(0).withSecondOfMinute(0).getMillis();
 			case MINUTE:
 				return dt.withMillisOfSecond(0).withSecondOfMinute(0).getMillis();
+			case SECOND:
+				return dt.withMillisOfSecond(0).getMillis();
 			default:
 				throw new RuntimeException("Unknown TimePeriod");
 		}

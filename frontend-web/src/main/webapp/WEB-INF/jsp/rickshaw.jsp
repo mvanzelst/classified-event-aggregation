@@ -20,7 +20,7 @@
 <div id="content">
 
 	<form id="side_panel">
-		<h1>Random Data in the Future</h1>
+		<h1>LogLevels</h1>
 		<section><div id="legend"></div></section>
 		<section>
 			<div id="renderer_form" class="toggler">
@@ -227,8 +227,8 @@ function mergeDataSeries(seriesA, seriesB){
 	return newSeries;
 }
 
-updateGraph("LogLevel");
-setInterval(function(){updateGraph("LogLevel");}, 200);
+updateGraph("TaskId");
+setInterval(function(){updateGraph("TaskId");}, 200);
 
 var lastDataSeries;
 var keys;
@@ -236,7 +236,7 @@ var graphSeries;
 var graph;
 function updateGraph(classificationKey){
 	$.ajax({
-		url: "http://localhost:8080/frontend-web/classification/" + classificationKey + "/date/values?reverse=true",
+		url: "http://localhost:8080/frontend-web/classification/" + classificationKey + "/second/values?reverse=true&limit=500",
 		success: function(data) {
 			var currentDataSeries = convertToDataByClassification(data);
 			if(graph === undefined){
@@ -244,7 +244,7 @@ function updateGraph(classificationKey){
 				sortData(currentDataSeries);
 
 				// Only keep latest 10 data points
-				sliceSeries(currentDataSeries, -100);
+				sliceSeries(currentDataSeries, -250);
 
 				var series = [];
 				addDataToSeries(series, currentDataSeries);
@@ -257,7 +257,7 @@ function updateGraph(classificationKey){
 				sortData(mergedData);
 
 				// Only keep latest 10 data points
-				sliceSeries(mergedData, -100);
+				sliceSeries(mergedData, -250);
 
 				// Add data to existing series
 				addDataToSeries(graph.series, mergedData);

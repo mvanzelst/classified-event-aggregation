@@ -17,8 +17,12 @@
 			<url>http://oss.sonatype.org/content/repositories/github-releases/</url>
 		</repository>
 		<repository>
-			<id>clojars</id>
+			<id>clojars.org</id>
 			<url>http://clojars.org/repo</url>
+		</repository>
+		<repository>
+			<id>conjars.org</id>
+			<url>http://conjars.org/repo</url>
 		</repository>
 	</repositories>
 
@@ -57,13 +61,11 @@
 			<groupId>storm</groupId>
 			<artifactId>storm</artifactId>
 			<version>0.9.0.1</version>
+			<!-- keep storm out of the jar-with-dependencies -->
+			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<artifactId>log4j-over-slf4j</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>slf4j-api</artifactId>
 					<groupId>org.slf4j</groupId>
 				</exclusion>
 				<exclusion>
@@ -75,7 +77,7 @@
 		<dependency>
 			<groupId>storm</groupId>
 			<artifactId>storm-kafka</artifactId>
-			<version>0.8.0-wip4</version>
+			<version>0.9.0-wip16a-scala292</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-collections</groupId>
@@ -106,8 +108,8 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
-		<!--  ehcache -->
+
+		<!-- ehcache -->
 		<dependency>
 			<groupId>net.sf.ehcache</groupId>
 			<artifactId>ehcache</artifactId>

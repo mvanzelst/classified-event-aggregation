@@ -37,11 +37,11 @@ public class Classification {
 	}
 	
 	public static Classification fromString(String input){
-		if(input.matches("\\A[A-Za-z0-9_\\-]+:[A-Za-z0-9_\\-]+\\Z")){
-			String split[] = input.split(":");
+		if(input.matches("\\A#[A-Za-z0-9_\\-]+:[A-Za-z0-9_\\-]+\\Z")){
+			String split[] = input.substring(1).split(":");
 			return new Classification(split[0], split[1]);
-		} else if(input.matches("\\A[A-Za-z0-9_\\-]+\\Z")){
-			return new Classification(input);
+		} else if(input.matches("\\A#[A-Za-z0-9_\\-]+\\Z")){
+			return new Classification(input.substring(1));
 		} else {
 			throw new RuntimeException("Error parsing classification: " + input);
 		}

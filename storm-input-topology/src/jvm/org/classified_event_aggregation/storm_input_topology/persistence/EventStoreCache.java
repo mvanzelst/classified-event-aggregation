@@ -9,11 +9,14 @@ import net.sf.ehcache.config.CacheConfiguration;
 
 import org.classified_event_aggregation.storm_input_topology.model.Classification;
 import org.classified_event_aggregation.storm_input_topology.model.ClassifiedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EventStoreCache implements EventStore {
 
 	private final EventStore decoratedEventStore;
 	private final Cache cache;
+	private static Logger logger = LoggerFactory.getLogger(EventStoreCache.class);
 
 	public EventStoreCache(EventStore decoratedEventStore) {
 		this.decoratedEventStore = decoratedEventStore;
@@ -43,6 +46,7 @@ public class EventStoreCache implements EventStore {
 
 	@Override
 	public void setClassificationCounter(String periodTypeName, Long periodStart, String lastDescription, Classification classification, Long amount) {
+		logger.trace(String.format("setClassificationCounter(periodTypeName: %s, periodStart: %d, lastDescription: %s, classification: %s, amount: %d)", periodTypeName, periodStart, lastDescription, classification.toString(), amount));
 		String cacheKey = periodTypeName + "_" + periodStart + "_" + classification;
 		// Store in cache
 		Element element = new Element(cacheKey, (long) amount);

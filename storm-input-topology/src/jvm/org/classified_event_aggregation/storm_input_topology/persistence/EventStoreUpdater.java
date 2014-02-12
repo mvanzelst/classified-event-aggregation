@@ -1,5 +1,6 @@
 package org.classified_event_aggregation.storm_input_topology.persistence;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -10,7 +11,6 @@ import org.classified_event_aggregation.storm_input_topology.model.ClassifiedEve
 import org.classified_event_aggregation.storm_input_topology.model.Event;
 import org.classified_event_aggregation.storm_input_topology.model.time.TimePeriod;
 
-import scala.actors.threadpool.Arrays;
 import storm.trident.operation.TridentCollector;
 import storm.trident.state.BaseStateUpdater;
 import storm.trident.tuple.TridentTuple;
@@ -28,7 +28,8 @@ public class EventStoreUpdater extends BaseStateUpdater<EventStore>{
 			TimePeriod.WEEK,
 			TimePeriod.DATE,
 			TimePeriod.HOUR,
-			TimePeriod.MINUTE
+			TimePeriod.MINUTE,
+			TimePeriod.SECOND,
 		});
 	
 	@Override
