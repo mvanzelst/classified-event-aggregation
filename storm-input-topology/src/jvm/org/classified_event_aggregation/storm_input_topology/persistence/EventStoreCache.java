@@ -12,7 +12,7 @@ import org.classified_event_aggregation.storm_input_topology.model.ClassifiedEve
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EventStoreCache implements EventStore {
+public class EventStoreCache extends EventStoreDefault {
 
 	private final EventStore decoratedEventStore;
 	private final Cache cache;
@@ -21,7 +21,7 @@ public class EventStoreCache implements EventStore {
 	public EventStoreCache(EventStore decoratedEventStore) {
 		this.decoratedEventStore = decoratedEventStore;
 
-		// @todo make this configurable
+		// @TODO make this configurable
 		CacheConfiguration cacheConfig = new CacheConfiguration();
 		cacheConfig.setMaxBytesLocalHeap(1024L * 1024L * 64L); // 64 MB
 		cacheConfig.setName(UUID.randomUUID().toString());
@@ -72,6 +72,5 @@ public class EventStoreCache implements EventStore {
 		}
 		return output;
 	}
-
 
 }

@@ -78,8 +78,7 @@ public class ParseJSON extends BaseFunction {
 
 		collector.emit(new Values(
 			map.get("description"),
-			timestamp,
-			Arrays.asList(map.get("classifications").split(" "))
+			timestamp
 		));
 	}
 	

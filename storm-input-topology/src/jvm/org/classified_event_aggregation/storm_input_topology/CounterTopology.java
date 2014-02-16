@@ -9,14 +9,9 @@ import org.classified_event_aggregation.storm_input_topology.storm.ParseJSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import storm.kafka.HostPort;
-import storm.kafka.KafkaConfig.BrokerHosts;
 import storm.kafka.KafkaConfig.StaticHosts;
-import storm.kafka.KafkaSpout;
-import storm.kafka.SpoutConfig;
 import storm.kafka.trident.TransactionalTridentKafkaSpout;
 import storm.kafka.trident.TridentKafkaConfig;
-import storm.trident.TridentState;
 import storm.trident.TridentTopology;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
@@ -25,7 +20,7 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.spout.RawMultiScheme;
 import backtype.storm.tuple.Fields;
 
-public class TridentClassifiedEventsTopology {
+public class CounterTopology {
 	@SuppressWarnings("unused")
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	

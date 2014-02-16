@@ -40,10 +40,10 @@ public class CPUIntensiveTask implements Runnable {
 	private void logBeforeStart() {
 		MDC.put("TASK_NAME", CPUIntensiveTask.class.getSimpleName());
 		MDC.put("TASK_ID", UUID.randomUUID().toString());
+		logger.info("Starting task #TASK_STATUS:STARTING");
+
 		timer = Executors.newScheduledThreadPool(1);
 		timer.scheduleAtFixedRate(new LogTask(logger), 0, 150, TimeUnit.MILLISECONDS);
-
-		logger.info("STARTING TASK");
 	}
 
 	private void logAfterStart() {
@@ -53,8 +53,7 @@ public class CPUIntensiveTask implements Runnable {
 		} catch (InterruptedException e) {
 			logger.error("Failed to interrupt logtask", e);
 		}
-		logger.info("FINISHING TASK");
-
+		logger.info("Finishing task #TASK_STATUS:DONE");
 		MDC.clear();
 	}
 

@@ -13,7 +13,7 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
-public class CassandraEventStore implements EventStore {
+public class CassandraEventStore extends EventStoreDefault {
 
 	private Cluster cluster;
 	private Session session;

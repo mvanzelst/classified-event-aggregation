@@ -13,7 +13,9 @@ public interface EventStore extends State {
 
 	public void storeClassifiedEvent(ClassifiedEvent event);
 
+	public void incrementClassificationCounter(String periodTypeName, Long periodStart, String lastDescription, Classification classification, Long amount);
+
 	public void setClassificationCounter(String periodTypeName, Long periodStart, String lastDescription, Classification classification, Long amount);
-	
+
 	public Long getClassificationCounter(String periodTypeName, Long periodStart, Classification classification);
 }

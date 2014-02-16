@@ -109,6 +109,13 @@
 			</exclusions>
 		</dependency>
 
+		<!-- Math -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+			<version>3.2</version>
+		</dependency>
+
 		<!-- ehcache -->
 		<dependency>
 			<groupId>net.sf.ehcache</groupId>
