@@ -4,7 +4,6 @@ package org.classified_event_aggregation.web.controller;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.core.convert.support.ConversionServiceFactory;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.stereotype.Controller;
@@ -14,13 +13,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Clause;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
 import com.google.gson.JsonArray;
@@ -30,15 +26,20 @@ import com.google.gson.JsonPrimitive;
 @Controller
 public class Action {
 	private static Session session;
-	
+
 	@RequestMapping("/")
 	public String streamgraph() {
 		return "streamgraph";
 	}
-	
+
 	@RequestMapping("/rickshaw")
 	public String rickshaw(){
 		return "rickshaw";
+	}
+
+	@RequestMapping("/histogram")
+	public String histogram(){
+		return "histogram";
 	}
 
 	@RequestMapping("/classification/{classificationKey}/unique_values")
@@ -83,7 +84,7 @@ public class Action {
 		}
 		return arr.toString();
 	}
-	
+
 	@RequestMapping(
 		value = "/classification/{classificationKey}/{periodTypeName}/values", 
 		produces = "application/json; charset=utf-8",
@@ -116,7 +117,7 @@ public class Action {
 
 		if(end != null)
 			query.where(QueryBuilder.lte("period_start", end));
-		
+
 		query.limit(limit);
 
 		ResultSet result = session.execute(query);
@@ -130,7 +131,7 @@ public class Action {
 		}
 		return arr.toString();
 	}
-	
+
 	private Session getCassandraConnection(){
 		if(session == null){
 			Cluster cluster = Cluster.builder().addContactPoint("localhost").build();

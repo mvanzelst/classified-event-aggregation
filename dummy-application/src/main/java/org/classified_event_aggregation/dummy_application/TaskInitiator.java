@@ -10,7 +10,7 @@ import org.classified_event_aggregation.dummy_application.tasks.TaskBuilder;
 
 public class TaskInitiator {
 	public static void main(String[] args) throws InterruptedException {
-		Executor executor = Executors.newFixedThreadPool(4);
+		Executor executor = Executors.newFixedThreadPool(2);
 
 		List<TaskBuilder.TASKS> tasks = new ArrayList<TaskBuilder.TASKS>();
 		tasks.add(TaskBuilder.TASKS.CPUINTENSIVETASK);

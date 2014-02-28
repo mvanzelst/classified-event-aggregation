@@ -227,8 +227,8 @@ function mergeDataSeries(seriesA, seriesB){
 	return newSeries;
 }
 
-updateGraph("TaskId");
-setInterval(function(){updateGraph("TaskId");}, 200);
+updateGraph("LogLevel");
+setInterval(function(){updateGraph("LogLevel");}, 200);
 
 var lastDataSeries;
 var keys;
