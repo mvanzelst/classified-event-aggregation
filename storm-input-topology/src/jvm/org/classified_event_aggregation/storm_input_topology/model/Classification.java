@@ -1,18 +1,23 @@
 package org.classified_event_aggregation.storm_input_topology.model;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Classification {
 
 	private final String value;
 	private final String key;
+	private static final Pattern p = Pattern.compile("#([A-Za-z+0-9_-]+):([A-Za-z+0-9_-\\.,]+)"); 
+	private static final Logger log = LoggerFactory.getLogger(Classification.class);
 	
 	public Classification(String key, String value) {
 		this.key = key;
 		this.value = value;
-	}
-	
-	public Classification(String key) {
-		this.value = "_EMPTY_";
-		this.key = key;
 	}
 	
 	@Override
@@ -35,16 +40,17 @@ public class Classification {
 	public String toString() {
 		return "#" + key + ":" + value;
 	}
-	
-	public static Classification fromString(String input){
-		if(input.matches("\\A#[A-Za-z0-9_\\-]+:[A-Za-z0-9_\\-]+\\Z")){
-			String split[] = input.substring(1).split(":");
-			return new Classification(split[0], split[1]);
-		} else if(input.matches("\\A#[A-Za-z0-9_\\-]+\\Z")){
-			return new Classification(input.substring(1));
-		} else {
-			throw new RuntimeException("Error parsing classification: " + input);
-		}
-	}
 
+	public static Map<String, Classification> fromString(String input){
+		Matcher m = p.matcher(input);
+		Map<String, Classification> classifications = new HashMap<>();
+		while(m.find()){
+			log.debug("Found group '{}'", m.group());
+			Classification c = new Classification(m.group(1), m.group(2));
+			classifications.put(c.getKey(), c);
+		}
+		log.debug("Parsed classifications '{}'", classifications);
+		return classifications;
+	}
+	
 }

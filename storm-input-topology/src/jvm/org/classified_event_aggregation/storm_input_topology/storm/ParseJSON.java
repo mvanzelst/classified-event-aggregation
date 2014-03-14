@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +46,6 @@ public class ParseJSON extends BaseFunction {
 		
 		byte[] bytes = tuple.getBinary(0);
 		String decoded = new String(bytes, Charset.forName("UTF-8"));
-		//System.out.println(decoded);
 		if(log.isTraceEnabled()){
 			log.trace("Received message: " + decoded);
 		} else {
@@ -77,8 +77,7 @@ public class ParseJSON extends BaseFunction {
 		}
 
 		collector.emit(new Values(
-			map.get("description"),
-			timestamp
+			new LogMessage(map.get("description"), timestamp)
 		));
 	}
 	

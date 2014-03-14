@@ -63,7 +63,7 @@ public class EventStoreUpdater extends BaseStateUpdater<EventStore>{
 		// Parse classifications
 		Set<Classification> classificationObjects = new HashSet<Classification>();
 		for (String classification : classifications) {
-			classificationObjects.add(Classification.fromString(classification));
+			//classificationObjects.add(Classification.fromString(classification));
 		}
 		
 		return new ClassifiedEvent(event, classificationObjects);
