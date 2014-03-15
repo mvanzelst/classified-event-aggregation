@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd" >
+<log4j:configuration>
+	<appender name="console" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.EnhancedPatternLayout">
+			<param name="ConversionPattern"
+				value="{&quot;description&quot;: &quot;%d [%t] %-5p %-30.30c{1} - %m #TASK_NAME:%X{TASK_NAME} #TASK_ID:%X{TASK_ID} #LOG_LEVEL:%p&quot;, &quot;date&quot;: &quot;%d{ISO8601}{UTC}&quot;} %n" />
+		</layout>
+	</appender>
+	<appender name="socket" class="org.apache.log4j.net.SocketAppender">
+		<param name="Port" value="8081" />
+		<param name="RemoteHost" value="localhost" />
+		<param name="ReconnectionDelay" value="2500" />
+	</appender>
+	<appender name="async" class="org.apache.log4j.AsyncAppender">
+		<param name="BufferSize" value="10000" />
+		<appender-ref ref="socket" />
+	</appender>
+	<root>
+		<priority value="INFO" />
+		<appender-ref ref="async" />
+		<appender-ref ref="console" />
+	</root>
+</log4j:configuration>
