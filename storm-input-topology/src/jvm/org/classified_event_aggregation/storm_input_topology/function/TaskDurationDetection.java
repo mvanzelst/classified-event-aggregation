@@ -18,7 +18,7 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.config.CacheConfiguration;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.classified_event_aggregation.storm_input_topology.AnomalyDetectionTopology;
+import org.classified_event_aggregation.storm_input_topology.DurationAnomalyDetectionTopology;
 import org.classified_event_aggregation.storm_input_topology.model.Classification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +60,7 @@ public class TaskDurationDetection implements Function {
 		executor.scheduleAtFixedRate(new Runnable() {
 
 			@SuppressWarnings("unused")
-			private final Logger log = LoggerFactory.getLogger(AnomalyDetectionTopology.class);
+			private final Logger log = LoggerFactory.getLogger(DurationAnomalyDetectionTopology.class);
 
 			@Override
 			public void run() {
