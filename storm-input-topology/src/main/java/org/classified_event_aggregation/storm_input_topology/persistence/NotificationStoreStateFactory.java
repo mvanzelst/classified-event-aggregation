@@ -13,7 +13,7 @@ public class NotificationStoreStateFactory implements StateFactory {
 	@Override
 	public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
 		// @todo make configurable
-		return new LogMessageStore();
+		return new NotificationStore();
 	}
 
 }

@@ -4,9 +4,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -18,7 +18,6 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.config.CacheConfiguration;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.classified_event_aggregation.storm_input_topology.DurationAnomalyDetectionTopology;
 import org.classified_event_aggregation.storm_input_topology.model.Classification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +59,7 @@ public class TaskDurationDetection implements Function {
 		executor.scheduleAtFixedRate(new Runnable() {
 
 			@SuppressWarnings("unused")
-			private final Logger log = LoggerFactory.getLogger(DurationAnomalyDetectionTopology.class);
+			private final Logger log = LoggerFactory.getLogger(TaskDurationDetection.class);
 
 			@Override
 			public void run() {

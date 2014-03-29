@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 
+import kafka.javaapi.producer.ProducerData;
+
 import org.apache.log4j.EnhancedPatternLayout;
 import org.apache.log4j.Layout;
 import org.apache.log4j.Logger;
@@ -20,8 +22,9 @@ import org.apache.log4j.spi.LoggingEvent;
  */
 
 public class SocketNode implements Runnable {
-	Socket socket;
-	ObjectInputStream ois;
+	private Socket socket;
+	private ObjectInputStream ois;
+	private KafkaLogPublisher kafkaLogPublisher;
 
 	static Logger logger = Logger.getLogger(SocketNode.class);
 
@@ -37,14 +40,15 @@ public class SocketNode implements Runnable {
 	public void run() {
 		LoggingEvent event;
 		Logger remoteLogger;
-		Layout patternLayout = new EnhancedPatternLayout("{\"description\": \"%d [%t] %-5p %-30.30c{1} - %m #TASK_NAME:%X{TASK_NAME} #TASK_ID:%X{TASK_ID} #LOG_LEVEL:%p\", \"date\": \"%d{ISO8601}{UTC}\"} %n");
+		Layout patternLayout = new EnhancedPatternLayout("{\"description\": \"%d [%t] %-5p %-30.30c{1} - %m #SEQUENCE_NAME:%X{SEQUENCE_NAME} #SEQUENCE_ID:%X{SEQUENCE_ID} #LOG_LEVEL:%p\", \"date\": \"%d{ISO8601}{UTC}\"} %n");
 		try {
+			kafkaLogPublisher = new KafkaLogPublisher();
 			while (true) {
 				// read an event from the wire
 				event = (LoggingEvent) ois.readObject();
-
-				// @TODO add kafka connection here
-				System.out.println(patternLayout.format(event));
+				String message = patternLayout.format(event);
+				System.out.println(message);
+				kafkaLogPublisher.send(new ProducerData<String, String>("logs", message));
 			}
 		} catch (java.io.EOFException e) {
 			logger.info("Caught java.io.EOFException closing conneciton.");
@@ -54,7 +58,9 @@ public class SocketNode implements Runnable {
 			logger.info("Caught java.io.IOException: " + e);
 			logger.info("Closing connection.");
 		} catch (Exception e) {
-			logger.error("Unexpected exception. Closing conneciton.", e);
+			logger.error("Unexpected exception. Closing connection.", e);
+		} finally {
+			kafkaLogPublisher.close();
 		}
 
 		try {

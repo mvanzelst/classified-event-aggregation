@@ -12,14 +12,14 @@ public class Classification {
 
 	private final String value;
 	private final String key;
-	private static final Pattern p = Pattern.compile("#([A-Za-z+0-9_-]+):([A-Za-z+0-9_-\\.,]+)"); 
+	private static final Pattern p = Pattern.compile("#([A-Za-z+0-9_-]+):([A-Za-z+0-9_\\-.,]+)"); 
 	private static final Logger log = LoggerFactory.getLogger(Classification.class);
-	
+
 	public Classification(String key, String value) {
 		this.key = key;
 		this.value = value;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj){
 		Classification class2 = (Classification) obj;
@@ -45,7 +45,7 @@ public class Classification {
 		Matcher m = p.matcher(input);
 		Map<String, Classification> classifications = new HashMap<>();
 		while(m.find()){
-			log.debug("Found group '{}'", m.group());
+			log.debug("Found group '{}' 1:'{}' 2:'{}'", m.group(), m.group(1), m.group(2));
 			Classification c = new Classification(m.group(1), m.group(2));
 			classifications.put(c.getKey(), c);
 		}

@@ -12,7 +12,7 @@ public class NotificationStoreUpdater extends BaseStateUpdater<NotificationStore
 
 	@Override
 	public void updateState(NotificationStore state, List<TridentTuple> tuples, TridentCollector collector) {
-		state.storeNotification(description, relevance, timestamp, algorithmName);
+		//state.storeNotification(description, relevance, timestamp, algorithmName);
 	}
 
 }

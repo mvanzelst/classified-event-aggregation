@@ -7,6 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.classified_event_aggregation.storm_input_topology.function.DurationAnomalyDetection;
+import org.classified_event_aggregation.storm_input_topology.function.ExceptionCountAnomalyDetection;
+import org.classified_event_aggregation.storm_input_topology.model.Classification;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
 import org.classified_event_aggregation.storm_input_topology.persistence.LogMessageStoreStateFactory;
@@ -16,8 +20,6 @@ import org.classified_event_aggregation.storm_input_topology.persistence.Notific
 import org.classified_event_aggregation.storm_input_topology.storm.ParseJSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Iterables;
 
 import storm.kafka.KafkaConfig.StaticHosts;
 import storm.kafka.trident.TransactionalTridentKafkaSpout;
@@ -36,6 +38,9 @@ import backtype.storm.spout.RawMultiScheme;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 
+import com.google.common.collect.Iterables;
+import com.google.common.primitives.Doubles;
+
 public class LogMessagesAnomalyDetectionTopology {
 	@SuppressWarnings("unused")
 	private final Logger log = LoggerFactory.getLogger(LogMessagesAnomalyDetectionTopology.class);
@@ -44,7 +49,7 @@ public class LogMessagesAnomalyDetectionTopology {
 	public static StormTopology buildTopology(Map<String, Object> conf) {
 		TridentKafkaConfig spoutConfig = new TridentKafkaConfig(
 				StaticHosts.fromHostString(
-						Arrays.asList(new String[] { "localhost" }), 1), "test");
+						Arrays.asList(new String[] { "localhost" }), 1), "logs");
 		spoutConfig.scheme = new RawMultiScheme();
 		TridentTopology topology = new TridentTopology();
 
@@ -74,75 +79,7 @@ public class LogMessagesAnomalyDetectionTopology {
 
 		// Check for anomalies in the amount of exceptions
 		logSequenceStream
-			.each(new Fields("log_sequence"), new BaseFunction() {
-
-				// @TODO this could become very large
-				// List for each unique sequenceName with a history of the amount of exceptions
-				private Map<String, List<Integer>> sequenceExceptionsMap = new HashMap<>();
-
-				@Override
-				public void execute(TridentTuple tuple, TridentCollector collector) {
-					LogSequence logSequence = (LogSequence) tuple.getValueByField("log_sequence");
-					List<Integer> sequenceExceptions;
-					if(sequenceExceptionsMap.containsKey(logSequence.getSequenceName())){
-						sequenceExceptions = sequenceExceptionsMap.get(logSequence.getSequenceName());
-					} else {
-						sequenceExceptions = new ArrayList<>();
-					}
-
-					// Count the number of exceptions in the current log sequence
-					int numExceptions = countExceptions(logSequence);
-
-					// What is the maximum number of exceptions
-					int maxExceptions = Collections.max(sequenceExceptions);
-
-					/*
-					 * Output notification
-					 */
-					String algorithmName = "Amount of exceptions anomaly";
-					String description;
-
-					// The timestamp of the last logmessage
-					long timestamp = Iterables.getLast(logSequence.getLogMessages()).getTimestamp();
-
-					double relevance;
-
-					if(numExceptions > maxExceptions){
-						description = "An anomalous exception occured";
-
-						// @TODO the relevance could be based on couple of things:
-						// The number of previous values
-						// The standard deviation of the set
-						// The change with respect to the stddev
-						relevance = 1;
-					} else {
-						description = "No anomalous exceptions occured";
-						relevance = 0;
-					}
-
-					collector.emit(new Values(description, relevance, timestamp, algorithmName));
-
-					// Store the numExceptions of the current LogSequence
-					sequenceExceptions.add(numExceptions);
-
-					// Cap the list
-					if(sequenceExceptions.size() > 100)
-						sequenceExceptions.remove(0);
-
-					// Store the list
-					sequenceExceptionsMap.put(logSequence.getSequenceName(), sequenceExceptions);
-				}
-
-				private int countExceptions(LogSequence logSequence){
-					int numExceptions = 0;
-					for (LogMessage logMessage : logSequence.getLogMessages()) {
-						if(logMessage.getClassifications().containsKey("LOG_LEVEL") && logMessage.getClassifications().get("LOG_LEVEL").getValue().contentEquals("ERROR"))
-							numExceptions++;
-					}
-					return numExceptions;
-				}
-
-			}, new Fields("description", "relevance", "timestamp", "algorithm_name"))
+			.each(new Fields("log_sequence"), new ExceptionCountAnomalyDetection(), new Fields("description", "relevance", "timestamp", "algorithm_name"))
 			// Store the notification
 			.partitionPersist(new NotificationStoreStateFactory(), new Fields("description", "relevance", "timestamp", "algorithm_name", "log_sequence"), new NotificationStoreUpdater());
 
@@ -150,7 +87,11 @@ public class LogMessagesAnomalyDetectionTopology {
 
 		// Check if sequence duration thresholds have been exceeded
 
-		// Check if sequence duration is anomalous (six sigma) 
+		// Check if sequence duration is anomalous (past the six sigma)
+		logSequenceStream
+			.each(new Fields("log_sequence"), new DurationAnomalyDetection(), new Fields("description", "relevance", "timestamp", "algorithm_name"))
+			// Store the notification
+			.partitionPersist(new NotificationStoreStateFactory(), new Fields("description", "relevance", "timestamp", "algorithm_name", "log_sequence"), new NotificationStoreUpdater());
 
 		return topology.build();
 	}

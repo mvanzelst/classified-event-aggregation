@@ -2,9 +2,7 @@ package org.classified_event_aggregation.storm_input_topology.model;
 
 import java.util.List;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
