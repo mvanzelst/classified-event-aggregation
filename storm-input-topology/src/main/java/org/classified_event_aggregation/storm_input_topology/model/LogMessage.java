@@ -1,11 +1,12 @@
 package org.classified_event_aggregation.storm_input_topology.model;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
-public class LogMessage {
+public class LogMessage implements Serializable {
 
 	private final String description;
 	private final Long timestamp;
@@ -34,6 +35,13 @@ public class LogMessage {
 		job.add("timestamp", new JsonPrimitive(timestamp));
 		job.add("description", new JsonPrimitive(description));
 		return job;
+	}
+	
+	public static LogMessage fromJSON(JsonObject job){
+		return new LogMessage(
+			job.getAsJsonPrimitive("description").getAsString(), 
+			job.getAsJsonPrimitive("timestamp").getAsLong()
+		);
 	}
 
 }

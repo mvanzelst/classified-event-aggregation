@@ -27,6 +27,7 @@ public class LogMessageStore implements State {
 
 	public static class Config {
 		public String node;
+		public String keySpace;
 	}
 
 	@SuppressWarnings("unused")
@@ -35,12 +36,11 @@ public class LogMessageStore implements State {
 	/**
 	 * @todo Make configurable via storm conf
 	 */
-	public LogMessageStore() {
-		this.config = new Config();
+	public LogMessageStore(Config config) {
 		cluster = Cluster.builder().addContactPoint(config.node).build();
 		dropTablesAndKeySpace();
 		createTablesAndKeySpace();
-		session = cluster.connect("cea");
+		session = cluster.connect(config.keySpace);
 		insertStmt = session.prepare("INSERT INTO log_message (sequenceId, sequenceName, descriptionHash, description, timestamp) VALUES (?, ?, ?, ?, ?)");
 		selectStmt = session.prepare("SELECT * FROM log_message WHERE sequenceId = ? AND timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC");
 	}

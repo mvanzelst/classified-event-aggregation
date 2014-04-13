@@ -58,21 +58,24 @@ public class ExceptionCountAnomalyDetection extends BaseFunction {
 
 		double relevance;
 
-		if(numExceptions > maxExceptions){
-			description = "An anomalous exception occured";
-
-			// @TODO the relevance could be based on couple of things:
-			// The number of previous values
-			// The standard deviation of the set
-			// The change with respect to the stddev
-			relevance = 1;
-			log.debug(description);
-		} else {
-			description = "No anomalous exceptions occured";
-			relevance = 0;
+		if(sequenceExceptions.size() >= 10){
+			if(numExceptions > maxExceptions){
+				description = "An anomalous exception occured";
+	
+				// @TODO the relevance could be based on couple of things:
+				// The number of previous values
+				// The standard deviation of the set
+				// The change with respect to the stddev
+				relevance = 1;
+				log.debug(description);
+			} else {
+				description = "No anomalous exceptions occured";
+				relevance = 0;
+			}
+			collector.emit(new Values(description, relevance, timestamp, algorithmName));
 		}
 
-		collector.emit(new Values(description, relevance, timestamp, algorithmName));
+		
 
 		// Store the numExceptions of the current LogSequence
 		sequenceExceptions.add(numExceptions);

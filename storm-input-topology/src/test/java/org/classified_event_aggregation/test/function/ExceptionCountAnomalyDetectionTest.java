@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopologyBuilder;
 import org.classified_event_aggregation.storm_input_topology.function.ExceptionCountAnomalyDetection;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
@@ -33,7 +34,7 @@ public class ExceptionCountAnomalyDetectionTest {
 		function.execute(buildLogSequenceTuple(logSequence), collector);
 
 		List<Object> lastTuple = Iterables.getLast(collector.getTuples());
-		// The relevance of the last notificition should be one
+		// The relevance of the last notification should be one
 		// because the inserted log sequence takes a lot longer than the previous 100
 		Assert.assertEquals(lastTuple.get(1), 1);
 	}

@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopology;
+import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopologyBuilder;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
 import org.slf4j.Logger;

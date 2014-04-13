@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopology;
+import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopologyBuilder;
 import org.classified_event_aggregation.storm_input_topology.model.Classification;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
@@ -56,21 +56,24 @@ public class DurationAnomalyDetection extends BaseFunction {
 
 		double relevance;
 
-		if(aboveSixSigma(sequenceDurations, duration)){
-			description = "The duration of the log sequence is above the sixth sigma";
-
-			// @TODO the relevance could be based on couple of things:
-			// The number of previous values
-			// The standard deviation of the set
-			// The change with respect to the stddev
-			relevance = 1;
-			log.debug(description);
-		} else {
-			description = "No anomalous exceptions occured";
-			relevance = 0;
+		if(sequenceDurations.size() >= 10){
+			if(aboveSixSigma(sequenceDurations, duration)){
+				
+				description = "The duration of the log sequence is above the sixth sigma";
+	
+				// @TODO the relevance could be based on couple of things:
+				// The number of previous values
+				// The standard deviation of the set
+				// The change with respect to the stddev
+				relevance = 1;
+				log.debug(description);
+			} else {
+				description = "No anomalous exceptions occured";
+				relevance = 0;
+			}
+			collector.emit(new Values(description, relevance, timestamp, algorithmName));
 		}
-
-		collector.emit(new Values(description, relevance, timestamp, algorithmName));
+		
 
 		// Store the numExceptions of the current LogSequence
 		sequenceDurations.add(duration);

@@ -1,12 +1,16 @@
 package org.classified_event_aggregation.storm_input_topology.model;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
-public class LogSequence {
+public class LogSequence implements Serializable {
 
 	private final String sequenceName;
 	private final String sequenceId;
@@ -38,8 +42,24 @@ public class LogSequence {
 		for (LogMessage logMessage : logMessages) {
 			arr.add(logMessage.toJSON());
 		}
-		job.add("logmessages", arr);
+		job.add("logMessages", arr);
 		return job;
+	}
+	
+	public static LogSequence fromJSON(JsonObject job){
+		return new LogSequence(
+			job.getAsJsonPrimitive("sequenceName").getAsString(), 
+			job.getAsJsonPrimitive("sequenceId").getAsString(), 
+			toLogMessages(job.getAsJsonArray("logMessages"))
+		);
+	}
+	
+	private static List<LogMessage> toLogMessages(JsonArray logMessagesJson){
+		List<LogMessage> logMessages = new ArrayList<>();
+		for (JsonElement jsonElement : logMessagesJson) {
+			logMessages.add(LogMessage.fromJSON(jsonElement.getAsJsonObject()));
+		}
+		return logMessages;
 	}
 
 }

@@ -12,8 +12,12 @@ public class NotificationStoreStateFactory implements StateFactory {
 	@SuppressWarnings("rawtypes")
 	@Override
 	public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-		// @todo make configurable
-		return new NotificationStore();
+		NotificationStore.Config config = new NotificationStore.Config();
+		config.db = "notification";
+		config.host = "localhost";
+		config.password = "notification";
+		config.user = "notification";
+		return new NotificationStore(config);
 	}
 
 }

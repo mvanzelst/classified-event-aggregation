@@ -12,8 +12,10 @@ public class LogMessageStoreStateFactory implements StateFactory {
 	@SuppressWarnings("rawtypes")
 	@Override
 	public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-		// @TODO make configurable
-		return new LogMessageStore();
+		LogMessageStore.Config config = new LogMessageStore.Config();
+		config.keySpace = "cea";
+		config.node = "localhost";
+		return new LogMessageStore(config);
 	}
 
 }
