@@ -18,12 +18,15 @@ public class SocketServer {
 
 	static Logger logger = Logger.getLogger(SocketServer.class);
 	static int port;
+	static String applicationName;
 
 	public static void main(String argv[]) {
 		if (argv.length == 1)
 			init(argv[0]);
-		else
+		else {
 			usage("Wrong number of arguments.");
+			return;
+		}
 
 		try {
 			logger.info("Listening on port " + port);
@@ -44,7 +47,6 @@ public class SocketServer {
 	static void usage(String msg) {
 		System.err.println(msg);
 		System.err.println("Usage: java " + SocketServer.class.getName() + " port");
-		System.exit(1);
 	}
 
 	static void init(String portStr) {

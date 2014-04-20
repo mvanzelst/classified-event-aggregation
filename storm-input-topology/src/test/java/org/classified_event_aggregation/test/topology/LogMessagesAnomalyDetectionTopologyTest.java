@@ -52,7 +52,7 @@ public class LogMessagesAnomalyDetectionTopologyTest implements Serializable {
 		 *  Insert test data
 		 */
 		List<Object>[] inputData = retrieveInputData(testDataFile);
-		FixedBatchSpoutSynchronized spout = new FixedBatchSpoutSynchronized(new Fields("bytes"), inputData.length / 3, inputData);
+		FixedBatchSpoutSynchronized spout = new FixedBatchSpoutSynchronized(new Fields("bytes"), inputData.length, inputData);
 		topologyBuilder.setLogRecordSpout(spout);
 		
 		// Start cluster

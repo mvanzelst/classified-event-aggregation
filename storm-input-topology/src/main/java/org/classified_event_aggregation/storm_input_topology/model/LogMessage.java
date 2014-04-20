@@ -1,12 +1,14 @@
 package org.classified_event_aggregation.storm_input_topology.model;
 
-import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 
-public class LogMessage implements Serializable {
+public class LogMessage {
 
 	private final String description;
 	private final Long timestamp;
@@ -32,8 +34,8 @@ public class LogMessage implements Serializable {
 	
 	public JsonObject toJSON(){
 		JsonObject job = new JsonObject();
-		job.add("timestamp", new JsonPrimitive(timestamp));
-		job.add("description", new JsonPrimitive(description));
+		job.addProperty("timestamp", timestamp);
+		job.addProperty("description", description);
 		return job;
 	}
 	
@@ -42,6 +44,22 @@ public class LogMessage implements Serializable {
 			job.getAsJsonPrimitive("description").getAsString(), 
 			job.getAsJsonPrimitive("timestamp").getAsLong()
 		);
+	}
+
+	public static JsonArray toJson(List<LogMessage> messages){
+		JsonArray jsonArray = new JsonArray();
+		for (LogMessage message : messages) {
+			jsonArray.add(message.toJSON());
+		}
+		return jsonArray;
+	}
+	
+	public static List<LogMessage> fromJson(JsonArray jsonArray){
+		List<LogMessage> logMessages = new ArrayList<>();
+		for (JsonElement element : jsonArray) {
+			logMessages.add(fromJSON(element.getAsJsonObject()));
+		}
+		return logMessages;
 	}
 
 }

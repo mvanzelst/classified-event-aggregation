@@ -1,11 +1,9 @@
 package org.classified_event_aggregation.storm_input_topology.function;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
 import org.slf4j.Logger;
@@ -13,79 +11,66 @@ import org.slf4j.LoggerFactory;
 
 import storm.trident.operation.BaseFunction;
 import storm.trident.operation.TridentCollector;
+import storm.trident.operation.TridentOperationContext;
 import storm.trident.tuple.TridentTuple;
 import backtype.storm.tuple.Values;
 
 import com.google.common.collect.Iterables;
+import com.google.gson.JsonObject;
 
+@SuppressWarnings("serial")
 public class ExceptionCountAnomalyDetection extends BaseFunction {
+	
+	private Integer sample_size_min = null;
+	private Integer sample_size_max = null;
+	
+	@Override
+	public void prepare(Map conf, TridentOperationContext context) {
+		super.prepare(conf, context);
+		sample_size_min = (Integer) conf.get("algorithm.exception_count.sample_size.min");
+		sample_size_max = (Integer) conf.get("algorithm.exception_count.sample_size.max");
+	}
+	
 	@SuppressWarnings("unused")
 	private final Logger log = LoggerFactory.getLogger(ExceptionCountAnomalyDetection.class);
 
 	// @TODO this could become very large
 	// List for each unique sequenceName with a history of the amount of exceptions
-	private Map<String, List<Integer>> sequenceExceptionsMap = new HashMap<>();
+	private Map<String, DescriptiveStatistics> sequenceNumExceptionsMap = new HashMap<>();
 
 	@Override
 	public void execute(TridentTuple tuple, TridentCollector collector) {
 		LogSequence logSequence = (LogSequence) tuple.getValueByField("log_sequence");
-		List<Integer> sequenceExceptions;
-		if(sequenceExceptionsMap.containsKey(logSequence.getSequenceName())){
-			sequenceExceptions = sequenceExceptionsMap.get(logSequence.getSequenceName());
+		DescriptiveStatistics sequenceNumExceptions;
+		if(sequenceNumExceptionsMap.containsKey(logSequence.getSequenceName())){
+			sequenceNumExceptions = sequenceNumExceptionsMap.get(logSequence.getSequenceName());
 		} else {
-			sequenceExceptions = new ArrayList<>();
+			sequenceNumExceptions = new DescriptiveStatistics(sample_size_max);
 		}
 
-		// Count the number of exceptions in the current log sequence
 		int numExceptions = countExceptions(logSequence);
-
-		int maxExceptions;
-
-		// What is the maximum number of exceptions
-		if(sequenceExceptions.size() > 0)
-			maxExceptions = Collections.max(sequenceExceptions);
-		else 
-			maxExceptions = 0;
-
-		/*
-		 * Output notification
-		 */
-		String algorithmName = "Amount of exceptions anomaly";
-		String description;
 
 		// The timestamp of the last logmessage
 		long timestamp = Iterables.getLast(logSequence.getLogMessages()).getTimestamp();
-
-		double relevance;
-
-		if(sequenceExceptions.size() >= 10){
-			if(numExceptions > maxExceptions){
-				description = "An anomalous exception occured";
-	
-				// @TODO the relevance could be based on couple of things:
-				// The number of previous values
-				// The standard deviation of the set
-				// The change with respect to the stddev
-				relevance = 1;
-				log.debug(description);
-			} else {
-				description = "No anomalous exceptions occured";
-				relevance = 0;
-			}
-			collector.emit(new Values(description, relevance, timestamp, algorithmName));
+		
+		if(sequenceNumExceptions.getN() >= sample_size_min){
+			JsonObject stats = new JsonObject();
+			stats.addProperty("num_exceptions", numExceptions);
+			stats.addProperty("standard_deviation", sequenceNumExceptions.getStandardDeviation());
+			stats.addProperty("variance", sequenceNumExceptions.getVariance());
+			stats.addProperty("max", sequenceNumExceptions.getMax());
+			stats.addProperty("min", sequenceNumExceptions.getMax());
+			stats.addProperty("mean", sequenceNumExceptions.getMean());
+			stats.addProperty("sample_size", sequenceNumExceptions.getN());
+			stats.addProperty("skewness", sequenceNumExceptions.getSkewness());
+			collector.emit(new Values("num_exceptions_statistics", stats.toString(), logSequence.getSequenceId(), logSequence.getSequenceName(), logSequence.getApplicationName(), logSequence.toString(), timestamp));
 		}
 
-		
-
 		// Store the numExceptions of the current LogSequence
-		sequenceExceptions.add(numExceptions);
-
-		// Cap the list
-		if(sequenceExceptions.size() > 100)
-			sequenceExceptions.remove(0);
+		sequenceNumExceptions.addValue(numExceptions);
 
 		// Store the list
-		sequenceExceptionsMap.put(logSequence.getSequenceName(), sequenceExceptions);
+		sequenceNumExceptionsMap.put(logSequence.getSequenceName(), sequenceNumExceptions);
 	}
 
 	private int countExceptions(LogSequence logSequence){

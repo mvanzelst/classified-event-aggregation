@@ -1,12 +1,9 @@
 package org.classified_event_aggregation.storm_input_topology.function;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopologyBuilder;
 import org.classified_event_aggregation.storm_input_topology.model.Classification;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
@@ -15,28 +12,41 @@ import org.slf4j.LoggerFactory;
 
 import storm.trident.operation.BaseFunction;
 import storm.trident.operation.TridentCollector;
+import storm.trident.operation.TridentOperationContext;
 import storm.trident.tuple.TridentTuple;
 import backtype.storm.tuple.Values;
 
 import com.google.common.collect.Iterables;
-import com.google.common.primitives.Doubles;
+import com.google.gson.JsonObject;
 
+@SuppressWarnings("serial")
 public class DurationAnomalyDetection extends BaseFunction {
+	
+	private Integer sample_size_min = null;
+	private Integer sample_size_max = null;
+	
+	@Override
+	public void prepare(Map conf, TridentOperationContext context) {
+		super.prepare(conf, context);
+		sample_size_min = (Integer) conf.get("algorithm.duration.sample_size.min");
+		sample_size_max = (Integer) conf.get("algorithm.duration.sample_size.min");
+	}
+	
 	@SuppressWarnings("unused")
 	private final Logger log = LoggerFactory.getLogger(DurationAnomalyDetection.class);
 
 	// @TODO this could become very large
 	// List for each unique sequenceName with a history of the amount of exceptions
-	private Map<String, List<Long>> sequenceDurationsMap = new HashMap<>();
+	private Map<String, DescriptiveStatistics> sequenceDurationsMap = new HashMap<>();
 
 	@Override
 	public void execute(TridentTuple tuple, TridentCollector collector) {
 		LogSequence logSequence = (LogSequence) tuple.getValueByField("log_sequence");
-		List<Long> sequenceDurations;
+		DescriptiveStatistics sequenceDurations;
 		if(sequenceDurationsMap.containsKey(logSequence.getSequenceName())){
 			sequenceDurations = sequenceDurationsMap.get(logSequence.getSequenceName());
 		} else {
-			sequenceDurations = new ArrayList<>();
+			sequenceDurations = new DescriptiveStatistics(sample_size_max);
 		}
 
 		Long duration = getLogSequenceDuration(logSequence);
@@ -44,59 +54,29 @@ public class DurationAnomalyDetection extends BaseFunction {
 			log.warn("Could not find duration of logsequence: {}", logSequence);
 			return;
 		}
-
-		/*
-		 * Output notification
-		 */
-		String algorithmName = "Log duration anomaly";
-		String description;
+		
 
 		// The timestamp of the last logmessage
 		long timestamp = Iterables.getLast(logSequence.getLogMessages()).getTimestamp();
-
-		double relevance;
-
-		if(sequenceDurations.size() >= 10){
-			if(aboveSixSigma(sequenceDurations, duration)){
-				
-				description = "The duration of the log sequence is above the sixth sigma";
-	
-				// @TODO the relevance could be based on couple of things:
-				// The number of previous values
-				// The standard deviation of the set
-				// The change with respect to the stddev
-				relevance = 1;
-				log.debug(description);
-			} else {
-				description = "No anomalous exceptions occured";
-				relevance = 0;
-			}
-			collector.emit(new Values(description, relevance, timestamp, algorithmName));
-		}
 		
+		if(sequenceDurations.getN() >= sample_size_min){
+			JsonObject stats = new JsonObject();
+			stats.addProperty("duration", duration);
+			stats.addProperty("standard_deviation", sequenceDurations.getStandardDeviation());
+			stats.addProperty("variance", sequenceDurations.getVariance());
+			stats.addProperty("max", sequenceDurations.getMax());
+			stats.addProperty("min", sequenceDurations.getMax());
+			stats.addProperty("mean", sequenceDurations.getMean());
+			stats.addProperty("sample_size", sequenceDurations.getN());
+			stats.addProperty("skewness", sequenceDurations.getSkewness());
+			collector.emit(new Values("duration_statistics", stats.toString(), logSequence.getSequenceId(), logSequence.getSequenceName(), logSequence.getApplicationName(), logSequence.toString(), timestamp));
+		}
 
 		// Store the numExceptions of the current LogSequence
-		sequenceDurations.add(duration);
-
-		// Cap the list
-		if(sequenceDurations.size() > 100)
-			sequenceDurations.remove(0);
+		sequenceDurations.addValue(duration);
 
 		// Store the list
 		sequenceDurationsMap.put(logSequence.getSequenceName(), sequenceDurations);
-	}
-
-	private boolean aboveSixSigma(List<Long> stats, double number){
-		DescriptiveStatistics dstats = new DescriptiveStatistics(Doubles.toArray(stats));
-		double aboveMean = number - dstats.getMean();
-		double aboveMeanInStdDev = aboveMean / dstats.getStandardDeviation();
-		if(aboveMeanInStdDev >= 6){
-			log.info("{} is above sixth sigma with sigma of {} ", number, aboveMeanInStdDev);
-			return true;
-		} else {
-			log.debug("{} is below sixth sigma with sigma of {} ", number, aboveMeanInStdDev);
-			return false;
-		}
 	}
 
 	private Long getLogSequenceDuration(LogSequence logSequence){

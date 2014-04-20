@@ -25,16 +25,18 @@ public class LogMessageStoreUpdater extends BaseStateUpdater<LogMessageStore>{
 	private Map<String, LogSequence> logSequencesById = new HashMap<>();
 
 	@Override
+	// @TODO implement persistent storage
 	public void updateState(LogMessageStore state, List<TridentTuple> tuples, TridentCollector collector) {
 		for (TridentTuple tridentTuple : tuples) {
 
 			LogMessage logMessage = (LogMessage) tridentTuple.getValueByField("log_message");
+			String applicationName = logMessage.getClassifications().get("APPLICATION_NAME").getValue();
 			String sequenceId = logMessage.getClassifications().get("SEQUENCE_ID").getValue();
 			String sequenceName = logMessage.getClassifications().get("SEQUENCE_NAME").getValue();
 
 			LogSequence logSequence = logSequencesById.get(sequenceId);
 			if(logSequence == null){
-				logSequence = new LogSequence(sequenceName, sequenceId, new ArrayList<LogMessage>());
+				logSequence = new LogSequence(applicationName, sequenceName, sequenceId, new ArrayList<LogMessage>());
 			}
 
 			logSequence.getLogMessages().add(logMessage);

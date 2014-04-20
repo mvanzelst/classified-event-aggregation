@@ -28,6 +28,7 @@ import backtype.storm.StormSubmitter;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.spout.RawMultiScheme;
 import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Values;
 
 public class LogMessagesAnomalyDetectionTopologyBuilder implements Serializable {
 	@SuppressWarnings("unused")
@@ -61,22 +62,16 @@ public class LogMessagesAnomalyDetectionTopologyBuilder implements Serializable 
 		 * Log Sequence Processing 
 		 */
 
-		// Check for anomalies in the amount of exceptions
-		logSequenceStream
-			.each(new Fields("log_sequence"), new ExceptionCountAnomalyDetection(), new Fields("description", "relevance", "timestamp", "algorithm_name"))
-			// Store the notification
-			.partitionPersist(getNotificationStoreStateFactory(), new Fields("description", "relevance", "timestamp", "algorithm_name", "log_sequence"), new NotificationStoreUpdater());
+		// Gather statistics about the amount of statistics
+		Stream amountOfExceptionsStatisticsStream = logSequenceStream
+			.each(new Fields("log_sequence"), new ExceptionCountAnomalyDetection(), new Fields("algorithm_name", "stats", "sequence_id", "sequence_name", "application_name", "sequence_messages", "timestamp"));
 
-		// Check for anomalies in the amount of log records
+		// Gather duration statistics
+		Stream durationStatisticsStream = logSequenceStream
+			.each(new Fields("log_sequence"), new DurationAnomalyDetection(), new Fields("algorithm_name", "stats", "sequence_id", "sequence_name", "application_name", "sequence_messages", "timestamp"));
 
-		// Check if sequence duration thresholds have been exceeded
-
-		// Check if sequence duration is anomalous (past the six sigma)
-		logSequenceStream
-			.each(new Fields("log_sequence"), new DurationAnomalyDetection(), new Fields("description", "relevance", "timestamp", "algorithm_name"))
-			// Store the notification
-			.partitionPersist(getNotificationStoreStateFactory(), new Fields("description", "relevance", "timestamp", "algorithm_name", "log_sequence"), new NotificationStoreUpdater());
-
+		Stream statisticsStream = topology.merge(durationStatisticsStream, amountOfExceptionsStatisticsStream);
+		statisticsStream.partitionPersist(stateFactory, updater);
 		return topology.build();
 	}
 	
@@ -90,6 +85,11 @@ public class LogMessagesAnomalyDetectionTopologyBuilder implements Serializable 
 	public static void main(String[] args) throws Exception {
 		// @todo Add database conf
 		Config topologyConf = new Config();
+		topologyConf.put("algorithm.duration.sample_size.min", 20);
+		topologyConf.put("algorithm.duration.sample_size.max", 100);
+		topologyConf.put("algorithm.exception_count.sample_size.min", 20);
+		topologyConf.put("algorithm.exception_count.sample_size.max", 100);
+
 		topologyConf.setMaxSpoutPending(5);
 		LogMessagesAnomalyDetectionTopologyBuilder self = new LogMessagesAnomalyDetectionTopologyBuilder();
 		if (args.length == 0) {
