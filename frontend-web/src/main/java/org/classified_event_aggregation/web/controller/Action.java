@@ -131,7 +131,12 @@ public class Action {
 		}
 		return arr.toString();
 	}
-
+	
+	@RequestMapping("main")
+	public String getMain(){
+		return "main";
+	}
+	
 	private Session getCassandraConnection(){
 		if(session == null){
 			Cluster cluster = Cluster.builder().addContactPoint("localhost").build();
