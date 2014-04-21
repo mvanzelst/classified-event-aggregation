@@ -7,7 +7,7 @@
   margin-left: -250px;
   left: 250px;
   width: 250px;
-  position: fixed;
+  float: left;
   height: 100%;
   overflow-y: auto;
   z-index: 1000;
@@ -51,7 +51,11 @@
   padding: 20px;
 }
 
-.tree-toggler {
-  display: none;
+text{
+	color:#FFF;
+}
+
+.nav>li>a.current {
+	background-color: #eee;
 }
 
