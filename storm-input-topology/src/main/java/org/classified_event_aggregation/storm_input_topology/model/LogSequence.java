@@ -1,11 +1,10 @@
 package org.classified_event_aggregation.storm_input_topology.model;
 
-import java.io.Serializable;
 import java.util.List;
 
 import com.google.gson.JsonObject;
 
-public class LogSequence implements Serializable {
+public class LogSequence {
 
 	private final String applicationName;
 	private final String sequenceName;
@@ -20,6 +19,10 @@ public class LogSequence implements Serializable {
 		this.logMessages = logMessages;
 		this.timestamp = timestamp;
 	}
+	
+	public String getApplicationName() {
+		return applicationName;
+	}
 
 	public String getSequenceName() {
 		return sequenceName;
@@ -27,6 +30,10 @@ public class LogSequence implements Serializable {
 
 	public String getSequenceId() {
 		return sequenceId;
+	}
+	
+	public long getTimestamp() {
+		return timestamp;
 	}
 
 	public List<LogMessage> getLogMessages() {

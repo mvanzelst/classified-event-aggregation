@@ -4,18 +4,18 @@ import java.util.List;
 
 public class Application {
 	private final String name;
-	private final List<Task> tasks;
+	private final List<LogSequence> sequences;
 	
-	public Application(String name, List<Task> tasks) {
+	public Application(String name, List<LogSequence> sequences) {
 		this.name = name;
-		this.tasks = tasks;
+		this.sequences = sequences;
 	}
 	
 	public String getName() {
 		return name;
 	}
 
-	public List<Task> getTasks() {
-		return tasks;
+	public List<LogSequence> getSequences() {
+		return sequences;
 	}
 }

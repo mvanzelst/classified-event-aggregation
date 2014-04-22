@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
+import org.classified_event_aggregation.storm_input_topology.model.LogSequenceStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,14 +22,14 @@ import com.google.gson.JsonObject;
 @SuppressWarnings("serial")
 public class ExceptionCountAnomalyDetection extends BaseFunction {
 	
-	private Integer sample_size_min = null;
-	private Integer sample_size_max = null;
+	private Long sample_size_min = null;
+	private Long sample_size_max = null;
 	
 	@Override
 	public void prepare(Map conf, TridentOperationContext context) {
 		super.prepare(conf, context);
-		sample_size_min = (Integer) conf.get("algorithm.exception_count.sample_size.min");
-		sample_size_max = (Integer) conf.get("algorithm.exception_count.sample_size.max");
+		sample_size_min = (Long) conf.get("algorithm.exception_count.sample_size.min");
+		sample_size_max = (Long) conf.get("algorithm.exception_count.sample_size.max");
 	}
 	
 	@SuppressWarnings("unused")
@@ -45,7 +46,7 @@ public class ExceptionCountAnomalyDetection extends BaseFunction {
 		if(sequenceNumExceptionsMap.containsKey(logSequence.getSequenceName())){
 			sequenceNumExceptions = sequenceNumExceptionsMap.get(logSequence.getSequenceName());
 		} else {
-			sequenceNumExceptions = new DescriptiveStatistics(sample_size_max);
+			sequenceNumExceptions = new DescriptiveStatistics(sample_size_max.intValue());
 		}
 
 		int numExceptions = countExceptions(logSequence);
@@ -63,7 +64,8 @@ public class ExceptionCountAnomalyDetection extends BaseFunction {
 			stats.addProperty("mean", sequenceNumExceptions.getMean());
 			stats.addProperty("sample_size", sequenceNumExceptions.getN());
 			stats.addProperty("skewness", sequenceNumExceptions.getSkewness());
-			collector.emit(new Values("num_exceptions_statistics", stats.toString(), logSequence.getSequenceId(), logSequence.getSequenceName(), logSequence.getApplicationName(), logSequence.toString(), timestamp));
+			LogSequenceStatistics logSequenceStatistics = new LogSequenceStatistics(logSequence, "duration_statistics", stats);
+			collector.emit(new Values(logSequenceStatistics));
 		}
 
 		// Store the numExceptions of the current LogSequence

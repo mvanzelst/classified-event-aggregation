@@ -2,20 +2,24 @@ package org.classified_event_aggregation.persistence;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import org.classified_event_aggregation.model.Application;
-import org.classified_event_aggregation.model.Task;
+import org.classified_event_aggregation.model.LogSequence;
 import org.springframework.stereotype.Repository;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
 @Repository
-public class StatisticStore {
+public class LogSequenceStatisticsStore {
 
 	private Session session;
 
@@ -29,25 +33,26 @@ public class StatisticStore {
 	private void closeCassandraConnection(){
 		this.session.shutdown();
 	}
-	
-	
 
 	public List<Application> getApplications(){
-		return Arrays.asList(
-			new Application("Xtranet Prod", getTasks("Xtranet Prod")), 
-			new Application("Xtranet Acc", getTasks("Xtranet Acc"))
-		);
+		ResultSet resultSet = this.session.execute("SELECT DISTINCT applicationName, sequenceName FROM log_sequence_statistics_by_sequence_name");
+		
+		Map<String, Application> applications = new HashMap<>();
+		for (Row row : resultSet) {
+			String applicationName = row.getString("applicationName");
+			String sequenceName = row.getString("sequenceName");
+			if(applications.containsKey(applicationName)){
+				List<LogSequence> sequences = applications.get(applicationName).getSequences();
+				sequences.add(new LogSequence(sequenceName));
+			} else {
+				List<LogSequence> sequences = new ArrayList<LogSequence>();
+				sequences.add(new LogSequence(sequenceName));
+				applications.put(applicationName, new Application(applicationName, sequences));
+			}
+		}
+		return new ArrayList<>(applications.values());
 	}
 
-	public List<Task> getTasks(String applicationName){
-		if(applicationName.equals("Xtranet Prod")){
-			return Arrays.asList(new Task("prod task 1"), new Task("prod task 2"));
-		} else if(applicationName.equals("Xtranet Acc")){
-			return Arrays.asList(new Task("acc task 1"), new Task("acc task 2"));
-		} else {
-			return new ArrayList<>();
-		}
-	}
 	/*
 	 * GenericConversionService service = new DefaultConversionService();
 		Long start = service.convert(startParam, Long.class);

@@ -36,7 +36,7 @@ public class LogMessageStoreUpdater extends BaseStateUpdater<LogMessageStore>{
 
 			LogSequence logSequence = logSequencesById.get(sequenceId);
 			if(logSequence == null){
-				logSequence = new LogSequence(applicationName, sequenceName, sequenceId, new ArrayList<LogMessage>());
+				logSequence = new LogSequence(applicationName, sequenceName, sequenceId, logMessage.getTimestamp(), new ArrayList<LogMessage>());
 			}
 
 			logSequence.getLogMessages().add(logMessage);

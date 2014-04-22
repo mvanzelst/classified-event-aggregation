@@ -8,8 +8,8 @@ import org.classified_event_aggregation.storm_input_topology.function.ExceptionC
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.persistence.LogMessageStoreStateFactory;
 import org.classified_event_aggregation.storm_input_topology.persistence.LogMessageStoreUpdater;
-import org.classified_event_aggregation.storm_input_topology.persistence.NotificationStoreStateFactory;
-import org.classified_event_aggregation.storm_input_topology.persistence.NotificationStoreUpdater;
+import org.classified_event_aggregation.storm_input_topology.persistence.LogSequenceStatisticsStoreStateFactory;
+import org.classified_event_aggregation.storm_input_topology.persistence.LogSequenceStatisticsStoreUpdater;
 import org.classified_event_aggregation.storm_input_topology.storm.ParseJSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,6 @@ public class LogMessagesAnomalyDetectionTopologyBuilder implements Serializable 
 
 	private IBatchSpout logRecordSpout;
 	private LogMessageStoreStateFactory logMessageStoreStateFactory;
-	private NotificationStoreStateFactory notificationStoreStateFactory;
 
 	public StormTopology buildTopology() {
 
@@ -62,16 +61,19 @@ public class LogMessagesAnomalyDetectionTopologyBuilder implements Serializable 
 		 * Log Sequence Processing 
 		 */
 
+		// Store the logsequence
+		// logSequenceStream.partitionPersist(stateFactory, updater);
+		
 		// Gather statistics about the amount of statistics
-		Stream amountOfExceptionsStatisticsStream = logSequenceStream
-			.each(new Fields("log_sequence"), new ExceptionCountAnomalyDetection(), new Fields("algorithm_name", "stats", "sequence_id", "sequence_name", "application_name", "sequence_messages", "timestamp"));
+		logSequenceStream
+			.each(new Fields("log_sequence"), new ExceptionCountAnomalyDetection(), new Fields("log_sequence_statistics"))
+			.partitionPersist(new LogSequenceStatisticsStoreStateFactory(), new Fields("log_sequence_statistics"), new LogSequenceStatisticsStoreUpdater());
 
 		// Gather duration statistics
-		Stream durationStatisticsStream = logSequenceStream
-			.each(new Fields("log_sequence"), new DurationAnomalyDetection(), new Fields("algorithm_name", "stats", "sequence_id", "sequence_name", "application_name", "sequence_messages", "timestamp"));
+		logSequenceStream
+			.each(new Fields("log_sequence"), new DurationAnomalyDetection(), new Fields("log_sequence_statistics"))
+			.partitionPersist(new LogSequenceStatisticsStoreStateFactory(), new Fields("log_sequence_statistics"), new LogSequenceStatisticsStoreUpdater());
 
-		Stream statisticsStream = topology.merge(durationStatisticsStream, amountOfExceptionsStatisticsStream);
-		statisticsStream.partitionPersist(stateFactory, updater);
 		return topology.build();
 	}
 	
@@ -124,42 +126,6 @@ public class LogMessagesAnomalyDetectionTopologyBuilder implements Serializable 
 
 	public void setLogRecordSpout(IBatchSpout logRecordSpout) {
 		this.logRecordSpout = logRecordSpout;
-	}
-
-	/* Notification Storage */
-	
-	private NotificationStoreStateFactory getNotificationStorage(){
-		if(notificationStoreStateFactory == null){
-			return new NotificationStoreStateFactory();
-		} else {
-			return notificationStoreStateFactory;
-		}
-	}
-
-	public NotificationStoreStateFactory getNotificationStoreStateFactory() {
-		return notificationStoreStateFactory;
-	}
-
-	public void setNotificationStoreStateFactory(NotificationStoreStateFactory notificationStoreStateFactory) {
-		this.notificationStoreStateFactory = notificationStoreStateFactory;
-	}
-	
-	/* LogMessage Storage */
-	
-	private LogMessageStoreStateFactory getLogMessageStorages(){
-		if(logMessageStoreStateFactory == null){
-			return new LogMessageStoreStateFactory();
-		} else {
-			return logMessageStoreStateFactory;
-		}
-	}
-
-	public LogMessageStoreStateFactory getLogMessageStoreStateFactory() {
-		return logMessageStoreStateFactory;
-	}
-
-	public void setLogMessageStoreStateFactory(LogMessageStoreStateFactory logMessageStoreStateFactory) {
-		this.logMessageStoreStateFactory = logMessageStoreStateFactory;
 	}
 	
 }

@@ -35,36 +35,36 @@ public class Action {
 		return "monitor-application";
 	}
 
-	@RequestMapping("/application/*/task/*/thresholds")
+	@RequestMapping("/application/*/sequence/*/thresholds")
 	public String thresholds(){
 		return "thresholds";
 	}
 	
-	@RequestMapping("/application/*/task/*/monitor")
-	public String monitorTask(){
-		return "monitor-task";
+	@RequestMapping("/application/*/sequence/*/monitor")
+	public String monitorsequence(){
+		return "monitor-sequence";
 	}
 	
-	@RequestMapping("/rest/application/{application}/monitor")
+	@RequestMapping("/rest/application/{applicationName}/monitor")
 	public @ResponseBody String monitorApplicationRest(
 			@RequestParam(defaultValue="1") boolean filterOn,
 			@RequestParam(defaultValue="1000") int limit,
-			@PathVariable String application
+			@PathVariable String applicationName
 		){
 		JsonArray jsonArray = new JsonArray();
-		statisticService.getStatistics(application, limit);
+		statisticService.getLogSequenceStatistics(applicationName, limit);
 		return jsonArray.toString();
 	}
 	
-	@RequestMapping("/rest/application/{application}/task/{task}/monitor")
-	public @ResponseBody String monitorTaskRest(
+	@RequestMapping("/rest/application/{applicationName}/sequence/{sequenceName}/monitor")
+	public @ResponseBody String monitorsequenceRest(
 			@RequestParam(defaultValue="1") boolean filterOn,
 			@RequestParam(defaultValue="1000") int limit,
-			@PathVariable String application,
-			@PathVariable String task
+			@PathVariable String applicationName,
+			@PathVariable String sequenceName
 		){
 		JsonArray jsonArray = new JsonArray();
-		statisticService.getStatistics(application, task, limit);
+		statisticService.getLogSequenceStatistics(applicationName, sequenceName, limit);
 		return jsonArray.toString();
 	}
 

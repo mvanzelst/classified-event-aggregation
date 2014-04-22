@@ -6,18 +6,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopologyBuilder;
-import org.classified_event_aggregation.storm_input_topology.model.Notification;
 import org.classified_event_aggregation.storm_input_topology.persistence.LogMessageStore;
 import org.classified_event_aggregation.storm_input_topology.persistence.LogMessageStoreStateFactory;
-import org.classified_event_aggregation.storm_input_topology.persistence.NotificationStore;
-import org.classified_event_aggregation.storm_input_topology.persistence.NotificationStoreStateFactory;
 import org.junit.Test;
 
 import storm.trident.operation.TridentCollector;
@@ -32,46 +28,32 @@ import backtype.storm.tuple.Values;
 
 
 public class LogMessagesAnomalyDetectionTopologyTest implements Serializable {
-		
-	public Collection<Notification> execute(String testDataFile) throws InterruptedException, IOException {
-		LogMessagesAnomalyDetectionTopologyBuilder topologyBuilder = new LogMessagesAnomalyDetectionTopologyBuilder();		
-		
-		/*
-		 * Insert mocks
-		 */
-		NotificationStoreStateFactoryMock notificationStoreStateFactoryMock = new NotificationStoreStateFactoryMock();
-		NotificationStore store = notificationStoreStateFactoryMock.getStore();		
-		topologyBuilder.setNotificationStoreStateFactory(notificationStoreStateFactoryMock);
-		topologyBuilder.setLogMessageStoreStateFactory(new LogMessageStoreStateFactoryMock());
-		
-		// clear notification store
-		store.purgeNotifications();
-		
-		
+	
+	@Test
+	public void test() throws InterruptedException, IOException {
+		LogMessagesAnomalyDetectionTopologyBuilder topologyBuilder = new LogMessagesAnomalyDetectionTopologyBuilder();
+
 		/*
 		 *  Insert test data
 		 */
-		List<Object>[] inputData = retrieveInputData(testDataFile);
+		List<Object>[] inputData = retrieveInputData("/data/set1.txt");
 		FixedBatchSpoutSynchronized spout = new FixedBatchSpoutSynchronized(new Fields("bytes"), inputData.length, inputData);
 		topologyBuilder.setLogRecordSpout(spout);
 		
 		// Start cluster
 		LocalCluster cluster = new LocalCluster();
-		cluster.submitTopology("classifiedEventProcessor", new Config(), topologyBuilder.buildTopology());
+		Config topologyConf = new Config();
+		topologyConf.put("algorithm.duration.sample_size.min", 10);
+		topologyConf.put("algorithm.duration.sample_size.max", 100);
+		topologyConf.put("algorithm.exception_count.sample_size.min", 10);
+		topologyConf.put("algorithm.exception_count.sample_size.max", 100);
+		cluster.submitTopology("classifiedEventProcessor", topologyConf, topologyBuilder.buildTopology());
 		
 		// Wait until all tuples are processed
 		do {
 			Thread.sleep(200L);
 		} while (!FixedBatchSpoutSynchronized.isDone());
 		cluster.shutdown();
-		
-		// Retrieve results
-		return store.getAllNotifications();
-	}
-	
-	@Test
-	public void test() throws InterruptedException, IOException {
-		Collection<Notification> notifications = execute("/data/set1.txt");
 	}
 	
 	private List<Object>[] retrieveInputData(String fileName) throws IOException {
@@ -187,27 +169,5 @@ public class LogMessagesAnomalyDetectionTopologyTest implements Serializable {
 			return new LogMessageStore(config);
 		}
 		
-	}
-	
-	public class NotificationStoreStateFactoryMock extends NotificationStoreStateFactory {
-		
-		@Override
-		public State makeState(Map conf, IMetricsContext metrics,
-				int partitionIndex, int numPartitions) {
-			return createStore();
-		}
-		
-		private NotificationStore createStore(){
-			NotificationStore.Config config = new NotificationStore.Config();
-			config.db = "notification-test";
-			config.host = "localhost";
-			config.password = "notification";
-			config.user = "notification";
-			return new NotificationStore(config);
-		}
-		
-		public NotificationStore getStore(){
-			return createStore();
-		}
 	}
 }

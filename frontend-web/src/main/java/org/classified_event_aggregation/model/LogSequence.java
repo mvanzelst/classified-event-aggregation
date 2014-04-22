@@ -1,9 +1,9 @@
 package org.classified_event_aggregation.model;
 
-public class Task {
+public class LogSequence {
 	private final String name;
 	
-	public Task(String name) {
+	public LogSequence(String name) {
 		this.name = name;
 	}
 

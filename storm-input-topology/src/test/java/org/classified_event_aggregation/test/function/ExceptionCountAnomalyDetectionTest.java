@@ -52,6 +52,6 @@ public class ExceptionCountAnomalyDetectionTest {
 			new LogMessage("message1 #SEQUENCE_STATUS:STARTED", start),
 			new LogMessage("message2 #SEQUENCE_STATUS:FINISHED", end)
 		});
-		return new LogSequence("a", sequenceId, logMessages);
+		return new LogSequence("test-app", "a", sequenceId, start, logMessages);
 	}
 }

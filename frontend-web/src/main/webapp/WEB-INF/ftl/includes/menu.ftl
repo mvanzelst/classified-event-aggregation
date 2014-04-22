@@ -13,24 +13,24 @@
 					</a>
 				</li>
 				<li>
-					<label class="tree-toggler nav-header">Tasks</label>
-					<#list application.tasks as task>
+					<label class="tree-toggler nav-header">sequences</label>
+					<#list application.sequences as sequence>
 					<ul class="nav nav-list tree">
 						<li>
-							<label class="tree-toggler nav-header">${task.name}</label>
+							<label class="tree-toggler nav-header">${sequence.name}</label>
 							<ul class="nav nav-list tree">
 								<li>
 									<a 
-										href="<@spring.url "/application/${application.name}/task/${task.name}/monitor" />"
-										<#if currenturl == "/application/${application.name}/task/${task.name}/monitor">class="current"</#if>
+										href="<@spring.url "/application/${application.name}/sequence/${sequence.name}/monitor" />"
+										<#if currenturl == "/application/${application.name}/sequence/${sequence.name}/monitor">class="current"</#if>
 									>
 									Monitor
 									</a>
 								</li>
 								<li>
 									<a 
-										href="<@spring.url "/application/${application.name}/task/${task.name}/thresholds" />"
-										<#if currenturl == "/application/${application.name}/task/${task.name}/thresholds">class="current"</#if>
+										href="<@spring.url "/application/${application.name}/sequence/${sequence.name}/thresholds" />"
+										<#if currenturl == "/application/${application.name}/sequence/${sequence.name}/thresholds">class="current"</#if>
 									>
 									Thresholds
 									</a>

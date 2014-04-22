@@ -1,8 +1,6 @@
 package org.classified_event_aggregation.storm_input_topology.model;
 
-import java.io.Serializable;
-
-public class Notification implements Serializable {
+public class Notification {
 
 	private String description; 
 	private double relevance;
