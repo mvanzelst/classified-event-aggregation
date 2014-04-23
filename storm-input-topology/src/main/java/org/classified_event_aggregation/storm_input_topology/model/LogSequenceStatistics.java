@@ -8,7 +8,8 @@ public class LogSequenceStatistics {
 	private final String algorithmName;
 	private final String sequenceName;
 	private final String sequenceId;
-	private final long timestamp;
+	private final long startTimestamp;
+	private final long endTimestamp;
 	private final JsonObject statistics;
 	
 	public LogSequenceStatistics(LogSequence logSequence, String algorithmName, JsonObject statistics) {
@@ -16,16 +17,18 @@ public class LogSequenceStatistics {
 		this.sequenceName = logSequence.getSequenceName();
 		this.sequenceId = logSequence.getSequenceId();
 		this.algorithmName = algorithmName;
-		this.timestamp = logSequence.getTimestamp();
+		this.startTimestamp = logSequence.getStartTimestamp();
+		this.endTimestamp = logSequence.getEndTimestamp();
 		this.statistics = statistics;
 	}
 	
-	public LogSequenceStatistics(String applicationName, String algorithmName, String sequenceName, String sequenceId, long timestamp, JsonObject statistics) {
+	public LogSequenceStatistics(String applicationName, String algorithmName, String sequenceName, String sequenceId, long startTimestamp, long endTimestamp, JsonObject statistics) {
 		this.applicationName = applicationName;
 		this.sequenceName = sequenceName;
 		this.sequenceId = sequenceId;
 		this.algorithmName = algorithmName;
-		this.timestamp = timestamp;
+		this.startTimestamp = startTimestamp;
+		this.endTimestamp = endTimestamp;
 		this.statistics = statistics;
 	}
 
@@ -44,9 +47,13 @@ public class LogSequenceStatistics {
 	public String getAlgorithmName() {
 		return algorithmName;
 	}
+	
+	public long getStartTimestamp() {
+		return startTimestamp;
+	}
 
-	public long getTimestamp() {
-		return timestamp;
+	public long getEndTimestamp() {
+		return endTimestamp;
 	}
 
 	public JsonObject getStatistics() {
@@ -57,7 +64,8 @@ public class LogSequenceStatistics {
 		JsonObject job = new JsonObject();
 		job.addProperty("sequenceName", sequenceName);
 		job.addProperty("sequenceId", sequenceId);
-		job.addProperty("timestamp", timestamp);
+		job.addProperty("startTimestamp", startTimestamp);
+		job.addProperty("endTimestamp", endTimestamp);
 		job.addProperty("applicationName", applicationName);
 		job.addProperty("algorithmName", algorithmName);
 		job.add("statistics", statistics);

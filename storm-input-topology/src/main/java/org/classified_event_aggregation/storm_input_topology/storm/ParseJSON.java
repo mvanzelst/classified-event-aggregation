@@ -77,7 +77,7 @@ public class ParseJSON extends BaseFunction {
 		}
 
 		collector.emit(new Values(
-			new LogMessage(map.get("description"), timestamp)
+			new LogMessage(map.get("application_name"), map.get("description"), timestamp)
 		));
 	}
 	

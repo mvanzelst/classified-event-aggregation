@@ -8,7 +8,7 @@
 		</layout>
 	</appender>
 	<appender name="socket" class="org.apache.log4j.net.SocketAppender">
-		<param name="Port" value="8081" />
+		<param name="Port" value="8070" />
 		<param name="RemoteHost" value="localhost" />
 		<param name="ReconnectionDelay" value="2500" />
 	</appender>

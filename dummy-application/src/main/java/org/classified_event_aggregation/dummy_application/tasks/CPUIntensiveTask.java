@@ -19,7 +19,7 @@ public class CPUIntensiveTask implements Runnable {
 	public void run() {
 		logBeforeStart();
 		logger.info("Executing task");
-		for (int i = 0; i < 100000; i++) {
+		for (int i = 0; i < 10000; i++) {
 			isPrime(i);
 		}
 		logAfterStart();
@@ -38,8 +38,8 @@ public class CPUIntensiveTask implements Runnable {
 	}
 
 	private void logBeforeStart() {
-		MDC.put("TASK_NAME", CPUIntensiveTask.class.getSimpleName());
-		MDC.put("TASK_ID", UUID.randomUUID().toString());
+		MDC.put("SEQUENCE_NAME", CPUIntensiveTask.class.getSimpleName());
+		MDC.put("SEQUENCE_ID", UUID.randomUUID().toString());
 		logger.info("Starting task #SEQUENCE_STATUS:STARTED");
 
 		timer = Executors.newScheduledThreadPool(1);

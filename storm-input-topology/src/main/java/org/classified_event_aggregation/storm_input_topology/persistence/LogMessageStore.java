@@ -97,7 +97,7 @@ public class LogMessageStore implements State {
 		);
 
 		for (Row row : result) {
-			LogMessage logMessage = new LogMessage(row.getString("description"), row.getLong("timestamp"));
+			LogMessage logMessage = new LogMessage(row.getString("applicationName"), row.getString("description"), row.getLong("timestamp"));
 			output.add(logMessage);
 		}
 		return output;

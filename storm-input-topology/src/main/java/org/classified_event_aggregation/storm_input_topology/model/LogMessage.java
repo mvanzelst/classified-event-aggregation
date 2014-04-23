@@ -11,13 +11,19 @@ import com.google.gson.JsonObject;
 public class LogMessage {
 
 	private final String description;
+	private final String applicationName;
 	private final Long timestamp;
 	private final Map<String, Classification> classifications;
 
-	public LogMessage(String description, Long timestamp) {
+	public LogMessage(String applicationName, String description, Long timestamp) {
+		this.applicationName = applicationName;
 		this.description = description;
 		this.timestamp = timestamp;
 		this.classifications = Classification.fromString(description);
+	}
+	
+	public String getApplicationName() {
+		return applicationName;
 	}
 
 	public String getDescription() {
@@ -41,7 +47,8 @@ public class LogMessage {
 	
 	public static LogMessage fromJSON(JsonObject job){
 		return new LogMessage(
-			job.getAsJsonPrimitive("description").getAsString(), 
+			job.getAsJsonPrimitive("applicationName").getAsString(),
+			job.getAsJsonPrimitive("description").getAsString(),
 			job.getAsJsonPrimitive("timestamp").getAsLong()
 		);
 	}

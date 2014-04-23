@@ -5,16 +5,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopologyBuilder;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.tuple.Values;
 import storm.trident.operation.TridentCollector;
 import storm.trident.state.BaseStateUpdater;
 import storm.trident.tuple.TridentTuple;
+import backtype.storm.tuple.Values;
 
 @SuppressWarnings("serial")
 public class LogMessageStoreUpdater extends BaseStateUpdater<LogMessageStore>{
@@ -30,13 +29,15 @@ public class LogMessageStoreUpdater extends BaseStateUpdater<LogMessageStore>{
 		for (TridentTuple tridentTuple : tuples) {
 
 			LogMessage logMessage = (LogMessage) tridentTuple.getValueByField("log_message");
-			String applicationName = logMessage.getClassifications().get("APPLICATION_NAME").getValue();
+			String applicationName = logMessage.getApplicationName();
 			String sequenceId = logMessage.getClassifications().get("SEQUENCE_ID").getValue();
 			String sequenceName = logMessage.getClassifications().get("SEQUENCE_NAME").getValue();
 
 			LogSequence logSequence = logSequencesById.get(sequenceId);
 			if(logSequence == null){
-				logSequence = new LogSequence(applicationName, sequenceName, sequenceId, logMessage.getTimestamp(), new ArrayList<LogMessage>());
+				List<LogMessage> logMessages = new ArrayList<>();
+				logMessages.add(logMessage);
+				logSequence = new LogSequence(applicationName, sequenceName, sequenceId, logMessage.getTimestamp(), logMessage.getTimestamp(), logMessages);
 			}
 
 			logSequence.getLogMessages().add(logMessage);

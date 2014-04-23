@@ -21,8 +21,8 @@ public class SocketServer {
 	static String applicationName;
 
 	public static void main(String argv[]) {
-		if (argv.length == 1)
-			init(argv[0]);
+		if (argv.length == 2)
+			init(argv[0], argv[1]);
 		else {
 			usage("Wrong number of arguments.");
 			return;
@@ -37,7 +37,7 @@ public class SocketServer {
 				InetAddress inetAddress = socket.getInetAddress();
 				logger.info("Connected to client at " + inetAddress);
 				logger.info("Starting new socket node.");
-				new Thread(new SocketNode(socket)).start();
+				new Thread(new SocketNode(socket, applicationName)).start();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -46,15 +46,16 @@ public class SocketServer {
 
 	static void usage(String msg) {
 		System.err.println(msg);
-		System.err.println("Usage: java " + SocketServer.class.getName() + " port");
+		System.err.println("Usage: java " + SocketServer.class.getName() + " port application_name");
 	}
 
-	static void init(String portStr) {
+	static void init(String portStr, String applicationNameStr) {
 		try {
 			port = Integer.parseInt(portStr);
 		} catch (java.lang.NumberFormatException e) {
 			e.printStackTrace();
 			usage("Could not interpret port number [" + portStr + "].");
 		}
+		applicationName = applicationNameStr;
 	}
 }

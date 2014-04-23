@@ -1,3 +1,4 @@
+<#import "/spring.ftl" as spring />
 <!DOCTYPE html>
 <html lang="en">
 <header>
@@ -6,10 +7,9 @@
 <!--  histogram -->
 <script src="http://d3js.org/d3.v2.min.js?2.10.0"></script>
 <script type="text/javascript">
-	$(document).ready(function() {
-		// Generate a log-normal distribution with a median of 10 minutes.
-		var values = d3.range(1000).map(d3.random.logNormal(Math.log(10), .7));
+	var restUrl = "<@spring.url "/rest" />";
 		
+	function createHistogram(targetElement, values){		
 		// Formatters for counts and times (converting numbers to Dates).
 		var formatCount = d3.format(",.0f"),
 			formatTime = d3.time.format("%H:%M"),
@@ -40,7 +40,7 @@
 			.orient("bottom")
 			.tickFormat(formatMinutes);
 		
-		var svg = d3.select("div#histogram").append("svg")
+		var svg = d3.select(targetElement).append("svg")
 			.attr("width", width + margin.left + margin.right)
 			.attr("height", height + margin.top + margin.bottom)
 		  .append("g")
@@ -68,6 +68,12 @@
 			.attr("class", "x axis")
 			.attr("transform", "translate(0," + height + ")")
 			.call(xAxis);
+	}
+	$(document).ready(function() {
+		createHistogram("div#histogram-durations",  JSON.parse("${durations}"));
+		createHistogram("div#histogram-standardScoreOfDuration", JSON.parse("${standardScoreOfDuration}"));
+		createHistogram("div#histogram-numExceptions", JSON.parse("${numExceptions}"));
+		createHistogram("div#histogram-standardScoreOfnNumExceptions", JSON.parse("${standardScoreOfNumExceptions}"));
 	});
 </script>
 
@@ -107,7 +113,10 @@ div#histogram {
 				<h1>Task thresholds</h1>
 			</div>
 			<div class="page-content inset">
-				<div id="histogram"></div>
+				<div id="histogram-durations"></div>
+				<div id="histogram-standardScoreOfDuration"></div>
+				<div id="histogram-numExceptions"></div>
+				<div id="histogram-standardScoreOfnNumExceptions"></div>
 			</div>
 		</div>
 	</div>

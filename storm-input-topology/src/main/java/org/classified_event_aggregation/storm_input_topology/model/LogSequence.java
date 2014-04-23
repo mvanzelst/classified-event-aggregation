@@ -9,15 +9,17 @@ public class LogSequence {
 	private final String applicationName;
 	private final String sequenceName;
 	private final String sequenceId;
-	private final long timestamp;
+	private final long startTimestamp;
+	private final long endTimestamp;
 	private final List<LogMessage> logMessages;
 	
-	public LogSequence(String applicationName, String sequenceName, String sequenceId, long timestamp, List<LogMessage> logMessages) {
+	public LogSequence(String applicationName, String sequenceName, String sequenceId, long startTimestamp, long endTimestamp, List<LogMessage> logMessages) {
 		this.applicationName = applicationName;
 		this.sequenceName = sequenceName;
 		this.sequenceId = sequenceId;
 		this.logMessages = logMessages;
-		this.timestamp = timestamp;
+		this.startTimestamp = startTimestamp;
+		this.endTimestamp = endTimestamp;
 	}
 	
 	public String getApplicationName() {
@@ -32,8 +34,12 @@ public class LogSequence {
 		return sequenceId;
 	}
 	
-	public long getTimestamp() {
-		return timestamp;
+	public long getStartTimestamp() {
+		return startTimestamp;
+	}
+	
+	public long getEndTimestamp() {
+		return endTimestamp;
 	}
 
 	public List<LogMessage> getLogMessages() {
@@ -42,9 +48,11 @@ public class LogSequence {
 
 	public JsonObject toJSON() {
 		JsonObject job = new JsonObject();
+		job.addProperty("applicationName", applicationName);
 		job.addProperty("sequenceName", sequenceName);
 		job.addProperty("sequenceId", sequenceId);
-		job.addProperty("timestamp", timestamp);
+		job.addProperty("startTimestamp", startTimestamp);
+		job.addProperty("endTimestamp", endTimestamp);
 		job.add("logMessages", LogMessage.toJson(logMessages));
 		return job;
 	}

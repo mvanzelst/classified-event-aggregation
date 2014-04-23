@@ -13,7 +13,7 @@ public class TaskInitiator {
 		Executor executor = Executors.newFixedThreadPool(2);
 
 		List<TaskBuilder.TASKS> tasks = new ArrayList<TaskBuilder.TASKS>();
-		tasks.add(TaskBuilder.TASKS.UNSTABLESLEEPTASK);
+		tasks.add(TaskBuilder.TASKS.CPUINTENSIVETASK);
 
 		for(int i=0; i<10000; i++){
 			TaskBuilder.TASKS taskName = tasks.get(new Random().nextInt(tasks.size()));

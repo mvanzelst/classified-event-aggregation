@@ -1,1 +1,1 @@
-mvn exec:java -Dexec.args=8080
+mvn exec:java -Dexec.args='8080 dummy-application'

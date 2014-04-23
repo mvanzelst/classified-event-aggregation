@@ -35,7 +35,7 @@ public class LogSequenceStatisticsStore implements State {
 		dropTablesAndKeySpace(config.keySpace);
 		createTablesAndKeySpace(config.keySpace);
 		session = cluster.connect(config.keySpace);
-		String insertTemplate = "INSERT INTO %s (applicationName, algorithmName, sequenceId, sequenceName, stats, timestamp) VALUES (?,?,?,?,?,?)";
+		String insertTemplate = "INSERT INTO %s (applicationName, algorithmName, sequenceId, sequenceName, stats, endTimestamp, startTimestamp) VALUES (?,?,?,?,?,?,?)";
 		applicationInsertStmt = session.prepare(String.format(insertTemplate, "log_sequence_statistics_by_application"));
 		sequenceInsertStmt = session.prepare(String.format(insertTemplate, "log_sequence_statistics_by_sequence_name"));
 		algorithmInsertStmt = session.prepare(String.format(insertTemplate, "log_sequence_statistics_by_algorithm_name"));
@@ -59,8 +59,9 @@ public class LogSequenceStatisticsStore implements State {
 				"sequenceId text, " +
 				"sequenceName text, " +
 				"stats text, " + 
-				"timestamp bigint, " +
-				"PRIMARY KEY (applicationName, timestamp, sequenceId, algorithmName) " +
+				"endTimestamp bigint, " +
+				"startTimestamp bigint, " +
+				"PRIMARY KEY (applicationName, endTimestamp, sequenceId, algorithmName) " +
 			");"
 		);
 		
@@ -71,8 +72,9 @@ public class LogSequenceStatisticsStore implements State {
 				"sequenceId text, " +
 				"sequenceName text, " +
 				"stats text, " + 
-				"timestamp bigint, " +
-				"PRIMARY KEY ((applicationName, sequenceName), timestamp, sequenceId, algorithmName) " +
+				"endTimestamp bigint, " +
+				"startTimestamp bigint, " +
+				"PRIMARY KEY ((applicationName, sequenceName), endTimestamp, sequenceId, algorithmName) " +
 			");"
 		);
 		
@@ -83,8 +85,9 @@ public class LogSequenceStatisticsStore implements State {
 				"sequenceId text, " +
 				"sequenceName text, " +
 				"stats text, " + 
-				"timestamp bigint, " +
-				"PRIMARY KEY ((applicationName, sequenceName, algorithmName), timestamp, sequenceId) " +
+				"endTimestamp bigint, " +
+				"startTimestamp bigint, " +
+				"PRIMARY KEY ((applicationName, sequenceName, algorithmName), endTimestamp, sequenceId) " +
 			");"
 		);
 
@@ -111,7 +114,8 @@ public class LogSequenceStatisticsStore implements State {
 				logSequenceStatistics.getSequenceId(),
 				logSequenceStatistics.getSequenceName(),
 				logSequenceStatistics.getStatistics().toString(),
-				logSequenceStatistics.getTimestamp()
+				logSequenceStatistics.getEndTimestamp(),
+				logSequenceStatistics.getStartTimestamp()
 			)
 		);
 		session.execute(
@@ -121,7 +125,8 @@ public class LogSequenceStatisticsStore implements State {
 				logSequenceStatistics.getSequenceId(),
 				logSequenceStatistics.getSequenceName(),
 				logSequenceStatistics.getStatistics().toString(),
-				logSequenceStatistics.getTimestamp()
+				logSequenceStatistics.getEndTimestamp(),
+				logSequenceStatistics.getStartTimestamp()
 			)
 		);
 		session.execute(
@@ -131,7 +136,8 @@ public class LogSequenceStatisticsStore implements State {
 				logSequenceStatistics.getSequenceId(),
 				logSequenceStatistics.getSequenceName(),
 				logSequenceStatistics.getStatistics().toString(),
-				logSequenceStatistics.getTimestamp()
+				logSequenceStatistics.getEndTimestamp(),
+				logSequenceStatistics.getStartTimestamp()
 			)
 		);
 	}

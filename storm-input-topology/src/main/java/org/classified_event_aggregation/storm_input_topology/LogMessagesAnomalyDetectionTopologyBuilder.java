@@ -28,7 +28,6 @@ import backtype.storm.StormSubmitter;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.spout.RawMultiScheme;
 import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
 
 public class LogMessagesAnomalyDetectionTopologyBuilder implements Serializable {
 	@SuppressWarnings("unused")

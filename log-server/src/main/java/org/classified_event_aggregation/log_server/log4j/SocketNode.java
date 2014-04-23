@@ -25,22 +25,24 @@ public class SocketNode implements Runnable {
 	private Socket socket;
 	private ObjectInputStream ois;
 	private KafkaLogPublisher kafkaLogPublisher;
+	private final String applicationName;
 
 	static Logger logger = Logger.getLogger(SocketNode.class);
 
-	public SocketNode(Socket socket) {
+	public SocketNode(Socket socket, String applicationName) {
 		this.socket = socket;
 		try {
 			ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
 		} catch (Exception e) {
 			logger.error("Could not open ObjectInputStream to " + socket, e);
 		}
+		this.applicationName = applicationName;
 	}
 
 	public void run() {
 		LoggingEvent event;
 		Logger remoteLogger;
-		Layout patternLayout = new EnhancedPatternLayout("{\"description\": \"%d [%t] %-5p %-30.30c{1} - %m #SEQUENCE_NAME:%X{SEQUENCE_NAME} #SEQUENCE_ID:%X{SEQUENCE_ID} #LOG_LEVEL:%p\", \"date\": \"%d{ISO8601}{UTC}\"} %n");
+		Layout patternLayout = new EnhancedPatternLayout("{\"application_name\":\""+ applicationName +"\", \"description\": \"%d [%t] %-5p %-30.30c{1} - %m #SEQUENCE_NAME:%X{SEQUENCE_NAME} #SEQUENCE_ID:%X{SEQUENCE_ID} #LOG_LEVEL:%p\", \"date\": \"%d{ISO8601}{UTC}\"} %n");
 		try {
 			kafkaLogPublisher = new KafkaLogPublisher();
 			while (true) {
