@@ -71,6 +71,10 @@ public class StatisticService {
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
 			JsonObject statistics = logSequenceStatisticsObject.getStatistics();
 			double stdDev = statistics.get(fieldName).getAsDouble();
+			if(stdDev == 0){
+				output.add(new JsonPrimitive(0));
+				continue;
+			}
 			double mean = statistics.get("mean").getAsDouble();
 			double duration = statistics.get(fieldName).getAsDouble();
 			double stdScore = (duration - mean) / stdDev;

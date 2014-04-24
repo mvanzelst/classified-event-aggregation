@@ -15,7 +15,8 @@ public class UnstableSleepTask implements Runnable {
 
 	@SuppressWarnings("unused")
 	private final Logger logger = LoggerFactory.getLogger(UnstableSleepTask.class);
-	private ScheduledExecutorService timer;
+	private ScheduledExecutorService timerLogger;
+	private ScheduledExecutorService timerErrorLogger;
 
 	public void run() {
 		logBeforeStart();
@@ -25,7 +26,13 @@ public class UnstableSleepTask implements Runnable {
 		} catch (InterruptedException e) {
 			// ignore
 		}
-		occasionallyLogError();
+		timerLogger = Executors.newScheduledThreadPool(1);
+		timerLogger.scheduleAtFixedRate(new Runnable() {
+			public void run() {
+				occasionallyLogError();
+			}
+		}, 0, 10, TimeUnit.MILLISECONDS);
+		
 		logAfterStart();
 	}
 
@@ -34,14 +41,20 @@ public class UnstableSleepTask implements Runnable {
 		MDC.put("SEQUENCE_ID", UUID.randomUUID().toString());
 		logger.info("Starting task #SEQUENCE_STATUS:STARTED");
 
-		timer = Executors.newScheduledThreadPool(1);
-		timer.scheduleAtFixedRate(new LogTask(logger), 0, 10, TimeUnit.MILLISECONDS);
+		timerErrorLogger = Executors.newScheduledThreadPool(1);
+		timerErrorLogger.scheduleAtFixedRate(new LogTask(logger), 0, 10, TimeUnit.MILLISECONDS);
 	}
 
 	private void logAfterStart() {
-		timer.shutdown();
+		timerErrorLogger.shutdown();
 		try {
-			timer.awaitTermination(1000, TimeUnit.MILLISECONDS);
+			timerErrorLogger.awaitTermination(1000, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+			logger.error("Failed to interrupt logtask", e);
+		}
+		timerLogger.shutdown();
+		try {
+			timerLogger.awaitTermination(1000, TimeUnit.MILLISECONDS);
 		} catch (InterruptedException e) {
 			logger.error("Failed to interrupt logtask", e);
 		}
@@ -50,8 +63,7 @@ public class UnstableSleepTask implements Runnable {
 	}
 	
 	private void occasionallyLogError(){
-		// Random number in range 1-250 inclusive
-		int random = RandomUtils.nextInt(1, 251);
+		int random = RandomUtils.nextInt(1, 25);
 		if(random == 1)
 			logger.error("Something went wrong");
 	}

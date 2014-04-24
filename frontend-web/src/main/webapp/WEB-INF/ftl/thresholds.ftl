@@ -11,9 +11,7 @@
 		
 	function createHistogram(targetElement, values){		
 		// Formatters for counts and times (converting numbers to Dates).
-		var formatCount = d3.format(",.0f"),
-			formatTime = d3.time.format("%H:%M"),
-			formatMinutes = function(d) { return d + "ms" };
+		var formatCount = d3.format(",.0f");
 		
 		var margin = {top: 10, right: 30, bottom: 30, left: 30},
 			width = 960 - margin.left - margin.right,
@@ -28,7 +26,7 @@
 		
 		// Generate a histogram using twenty uniformly-spaced bins.
 		var data = d3.layout.histogram()
-			.bins(x.ticks(20))
+			.bins(x.ticks(Math.min(Math.ceil(max / 10) * 10, 20)))
 			(values);
 		
 		var y = d3.scale.linear()
@@ -37,8 +35,7 @@
 		
 		var xAxis = d3.svg.axis()
 			.scale(x)
-			.orient("bottom")
-			.tickFormat(formatMinutes);
+			.orient("bottom");
 		
 		var svg = d3.select(targetElement).append("svg")
 			.attr("width", width + margin.left + margin.right)
@@ -113,9 +110,13 @@ div#histogram {
 				<h1>Task thresholds</h1>
 			</div>
 			<div class="page-content inset">
+				<p>Durations</p>
 				<div id="histogram-durations"></div>
+				<p>Standard score of Durations</p>
 				<div id="histogram-standardScoreOfDuration"></div>
+				<p>Num Exceptions</p>
 				<div id="histogram-numExceptions"></div>
+				<p>Standard score of Exceptions</p>
 				<div id="histogram-standardScoreOfnNumExceptions"></div>
 			</div>
 		</div>

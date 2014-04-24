@@ -106,6 +106,9 @@ public class LogSequenceStatisticsStore {
 
 		if(end != null)
 			query.where(QueryBuilder.lt("endTimestamp", end));
+		
+		if(limit > 0)
+			query.limit(limit);
 
 		query.orderBy((!reverse ? QueryBuilder.asc("endTimestamp") : QueryBuilder.desc("endTimestamp")));
 

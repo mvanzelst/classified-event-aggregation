@@ -64,6 +64,7 @@ public class ExceptionCountAnomalyDetection extends BaseFunction {
 			stats.addProperty("mean", sequenceNumExceptions.getMean());
 			stats.addProperty("sample_size", sequenceNumExceptions.getN());
 			stats.addProperty("skewness", sequenceNumExceptions.getSkewness());
+			stats.addProperty("kurtosis", sequenceNumExceptions.getKurtosis());
 			LogSequenceStatistics logSequenceStatistics = new LogSequenceStatistics(logSequence, "num_exceptions_statistics", stats);
 			collector.emit(new Values(logSequenceStatistics));
 		}

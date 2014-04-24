@@ -70,6 +70,7 @@ public class DurationAnomalyDetection extends BaseFunction {
 			stats.addProperty("mean", sequenceDurations.getMean());
 			stats.addProperty("sample_size", sequenceDurations.getN());
 			stats.addProperty("skewness", sequenceDurations.getSkewness());
+			stats.addProperty("kurtosis", sequenceDurations.getKurtosis());
 			LogSequenceStatistics logSequenceStatistics = new LogSequenceStatistics(logSequence, "duration_statistics", stats);
 			collector.emit(new Values(logSequenceStatistics));
 		}
