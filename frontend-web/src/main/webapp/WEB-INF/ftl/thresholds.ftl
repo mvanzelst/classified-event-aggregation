@@ -66,11 +66,48 @@
 			.attr("transform", "translate(0," + height + ")")
 			.call(xAxis);
 	}
+	
+	
+	
+	
 	$(document).ready(function() {
-		createHistogram("div#histogram-durations",  JSON.parse("${durations}"));
-		createHistogram("div#histogram-standardScoreOfDuration", JSON.parse("${standardScoreOfDuration}"));
-		createHistogram("div#histogram-numExceptions", JSON.parse("${numExceptions}"));
-		createHistogram("div#histogram-standardScoreOfnNumExceptions", JSON.parse("${standardScoreOfNumExceptions}"));
+		$("form.algorithm-threshold-form").submit(function(event) {
+			event.preventDefault();
+			var form = $(event.target);
+			var formData = {};
+			$.each(form.serializeArray(), function() {
+			    formData[this.name] = this.value;
+			});
+			if(formData.action == "delete"){
+				if(formData.id == "")
+					return;
+				
+				formData['_method'] = "DELETE";
+			} else if(formData.id == ""){
+				delete formData['id']
+				formData['_method'] = "POST";
+			} else {
+				formData['_method'] = "PUT";
+			}
+		    $.ajax({
+	           type: "POST",
+	           url: "<@spring.url "/rest/threshold" />",
+	           data: formData,
+	           success: function(data){
+	           		if(formData.action == "delete"){
+	           			form.find(input[name="thresholdValue"]).set("");
+	           			form.find(input[name="id"]).set("");
+	           		} else {
+	           			console.log(data);
+	           		}
+	           }
+	         });
+			
+		    return false; // avoid to execute the actual submit of the form.
+		});
+		<#list algorithms as algorithm>
+		createHistogram("div#histogram-${algorithm["algorithmName"]}",  JSON.parse("${algorithm["stats"]}"));
+		</#list>
 	});
 </script>
 
@@ -95,6 +132,7 @@ div#histogram {
   shape-rendering: crispEdges;
 }
 
+$
 </style>
 
 </header>
@@ -110,14 +148,23 @@ div#histogram {
 				<h1>Task thresholds</h1>
 			</div>
 			<div class="page-content inset">
-				<p>Durations</p>
-				<div id="histogram-durations"></div>
-				<p>Standard score of Durations</p>
-				<div id="histogram-standardScoreOfDuration"></div>
-				<p>Num Exceptions</p>
-				<div id="histogram-numExceptions"></div>
-				<p>Standard score of Exceptions</p>
-				<div id="histogram-standardScoreOfnNumExceptions"></div>
+				<#list algorithms as algorithm>
+					<div class="algorithm-statistics">
+						<p>${algorithm["algorithmDisplayName"]}</p>
+						<div id="histogram-${algorithm["algorithmName"]}"></div>
+						<div class="algorithm-threshold">
+							<form class="algorithm-threshold-form">
+								<input type="hidden" name="id" value="<#if algorithm["threshold"]?? >${algorithm["threshold"].id}</#if>" />
+								<input type="hidden" name="algorithmName" value="${algorithm["algorithmName"]}" />
+								<input type="hidden" name="applicationName" value="${applicationName}" />
+								<input type="hidden" name="sequenceName" value="${sequenceName}" />
+								<input type="text" name="thresholdValue" value="<#if algorithm["threshold"]?? >${algorithm["threshold"].thresholdValue}</#if>" />
+								<input type="submit" name="action" value="set" />
+								<input type="submit" name="action" value="delete" />
+							</form>
+						</div>
+					</div>
+				</#list>
 			</div>
 		</div>
 	</div>

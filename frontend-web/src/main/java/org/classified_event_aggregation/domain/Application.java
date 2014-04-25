@@ -1,4 +1,4 @@
-package org.classified_event_aggregation.model;
+package org.classified_event_aggregation.domain;
 
 import java.util.List;
 

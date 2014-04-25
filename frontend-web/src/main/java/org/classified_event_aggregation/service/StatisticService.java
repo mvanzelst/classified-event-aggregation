@@ -3,9 +3,9 @@ package org.classified_event_aggregation.service;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.classified_event_aggregation.model.Application;
-import org.classified_event_aggregation.model.LogSequenceStatistics;
-import org.classified_event_aggregation.persistence.LogSequenceStatisticsStore;
+import org.classified_event_aggregation.domain.Application;
+import org.classified_event_aggregation.domain.LogSequenceStatistics;
+import org.classified_event_aggregation.persistence.cassandra.LogSequenceStatisticsStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

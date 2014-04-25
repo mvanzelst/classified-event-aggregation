@@ -1,4 +1,4 @@
-package org.classified_event_aggregation.persistence;
+package org.classified_event_aggregation.persistence.cassandra;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,9 +8,9 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import org.classified_event_aggregation.model.Application;
-import org.classified_event_aggregation.model.LogSequence;
-import org.classified_event_aggregation.model.LogSequenceStatistics;
+import org.classified_event_aggregation.domain.Application;
+import org.classified_event_aggregation.domain.LogSequence;
+import org.classified_event_aggregation.domain.LogSequenceStatistics;
 import org.springframework.stereotype.Repository;
 
 import com.datastax.driver.core.Cluster;

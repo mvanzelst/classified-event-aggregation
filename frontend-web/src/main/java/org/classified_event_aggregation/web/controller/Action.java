@@ -10,28 +10,34 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.classified_event_aggregation.model.LogSequenceStatistics;
+import org.classified_event_aggregation.domain.LogSequenceStatistics;
+import org.classified_event_aggregation.domain.Threshold;
+import org.classified_event_aggregation.persistence.mysql.ThresholdRepository;
 import org.classified_event_aggregation.service.StatisticService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 
 @Controller
 public class Action {
 
 	@Autowired
 	private StatisticService statisticService;
+	
+	@Autowired
+	private ThresholdRepository thresholdRepository;
 	
 	@ModelAttribute
 	public void getModelAttributes(Model model, HttpServletRequest request) throws UnsupportedEncodingException{
@@ -50,10 +56,74 @@ public class Action {
 			@PathVariable String sequenceName,
 			Model model
 		){
-		model.addAttribute("durations", statisticService.getDurations(applicationName, sequenceName, 1000, null, null, true).toString());
-		model.addAttribute("standardScoreOfDuration", statisticService.getStandardScoresOfDuration(applicationName, sequenceName, 1000, null, null, true).toString());
-		model.addAttribute("numExceptions", statisticService.getNumExceptions(applicationName, sequenceName, 1000, null, null, true).toString());
-		model.addAttribute("standardScoreOfNumExceptions", statisticService.getStandardScoresOfNumExceptions(applicationName, sequenceName, 1000, null, null, true).toString());
+		List<Map<String, Object>> algorithms = new ArrayList<>();
+		
+		
+		Map<String, Object> durationAlgorithm = new HashMap<>();
+		durationAlgorithm.put("algorithmName", "durations");
+		durationAlgorithm.put("stats", statisticService.getDurations(applicationName, sequenceName, 1000, null, null, true).toString());		
+		Threshold t = thresholdRepository.findByApplicationNameAndSequenceNameAndAlgorithmName(
+			applicationName,
+			sequenceName, 
+			"durations"
+		);
+		
+		if(t != null)
+			durationAlgorithm.put("threshold", t);
+		
+		durationAlgorithm.put("algorithmDisplayName", "Durations");
+		algorithms.add(durationAlgorithm);
+		
+		
+		Map<String, Object> numExceptions = new HashMap<>();
+		numExceptions.put("algorithmName", "numExceptions");
+		numExceptions.put("stats", statisticService.getNumExceptions(applicationName, sequenceName, 1000, null, null, true).toString());		
+		Threshold t2 = thresholdRepository.findByApplicationNameAndSequenceNameAndAlgorithmName(
+			applicationName,
+			sequenceName, 
+			"numExceptions"
+		);
+		
+		if(t2 != null)
+			numExceptions.put("threshold", t2);
+		
+		numExceptions.put("algorithmDisplayName", "Number of exceptions");
+		algorithms.add(numExceptions);
+		
+		
+		Map<String, Object> standardScoreOfNumExceptionsAlgorithm = new HashMap<>();
+		standardScoreOfNumExceptionsAlgorithm.put("algorithmName", "standardScoreOfNumExceptions");
+		standardScoreOfNumExceptionsAlgorithm.put("stats", statisticService.getStandardScoresOfNumExceptions(applicationName, sequenceName, 1000, null, null, true).toString());		
+		Threshold t3 = thresholdRepository.findByApplicationNameAndSequenceNameAndAlgorithmName(
+			applicationName,
+			sequenceName, 
+			"standardScoreOfNumExceptions"
+		);
+		
+		if(t3 != null)
+			standardScoreOfNumExceptionsAlgorithm.put("threshold", t3);
+		
+		standardScoreOfNumExceptionsAlgorithm.put("algorithmDisplayName", "Standard scores of number of exceptions");
+		algorithms.add(standardScoreOfNumExceptionsAlgorithm);
+		
+		Map<String, Object> standardScoreOfDurationAlgorithm = new HashMap<>();
+		standardScoreOfDurationAlgorithm.put("algorithmName", "standardScoreOfDuration");
+		standardScoreOfDurationAlgorithm.put("stats", statisticService.getStandardScoresOfDuration(applicationName, sequenceName, 1000, null, null, true).toString());		
+		Threshold t4 = thresholdRepository.findByApplicationNameAndSequenceNameAndAlgorithmName(
+			applicationName,
+			sequenceName, 
+			"standardScoreOfDuration"
+		);
+		
+		if(t4 != null)
+			standardScoreOfDurationAlgorithm.put("threshold", t4);
+		
+		standardScoreOfDurationAlgorithm.put("algorithmDisplayName", "Standard scores of durations");
+		algorithms.add(standardScoreOfDurationAlgorithm);
+		
+		model.addAttribute("algorithms", algorithms);
+		
+		
 		return "thresholds";
 	}
 
@@ -107,17 +177,44 @@ public class Action {
 		return jsonArray.toString();
 	}
 	
-	@RequestMapping(value = "/rest/application/{applicationName}/sequence/{sequenceName}/distinct_algorithm_names", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String monitorAlgorithmRest(
-			@PathVariable String applicationName,
-			@PathVariable String sequenceName
-		){
-		JsonArray jsonArray = new JsonArray();
-		List<String> algorithmNames = statisticService.getDistinctAlgorithmNames(applicationName, sequenceName);
-		for (String algorithmName : algorithmNames) {
-			jsonArray.add(new JsonPrimitive(algorithmName));
+	@RequestMapping(method=RequestMethod.GET, value = "/rest/threshold", produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody ResponseEntity<String> getThreshold(@ModelAttribute Threshold threshold){
+		Threshold t = thresholdRepository.findByApplicationNameAndSequenceNameAndAlgorithmName(
+			threshold.getApplicationName(), 
+			threshold.getSequenceName(), 
+			threshold.getAlgorithmName()
+		);
+		
+		if(t == null){
+			return new ResponseEntity<String>(HttpStatus.NOT_FOUND); 
+		} else {
+			return new ResponseEntity<String>(t.toJson().toString(), HttpStatus.OK); 
 		}
-		return jsonArray.toString();
+	}
+	
+	@RequestMapping(method=RequestMethod.DELETE, value = "/rest/threshold")
+	@ResponseStatus(HttpStatus.OK)
+	public void deleteThreshold(@ModelAttribute Threshold threshold){
+		thresholdRepository.delete(threshold.getId());
+	}
+	
+	@RequestMapping(method=RequestMethod.POST, value = "/rest/threshold", produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody ResponseEntity<String> createThreshold(@ModelAttribute Threshold threshold){
+		if(threshold.getId() != null)
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		
+		Threshold t = thresholdRepository.save(threshold);
+		return new ResponseEntity<>(t.toJson().toString(), HttpStatus.CREATED);
+	}
+	
+	@RequestMapping(method=RequestMethod.PUT, value = "/rest/threshold")
+	@ResponseStatus(HttpStatus.OK)
+	public @ResponseBody ResponseEntity<String> updateThreshold(@ModelAttribute Threshold threshold){
+		if(threshold.getId() == null)
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		
+		Threshold t = thresholdRepository.save(threshold);
+		return new ResponseEntity<>(HttpStatus.ACCEPTED);
 	}
 
 	@RequestMapping("/")
