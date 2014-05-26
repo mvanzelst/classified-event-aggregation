@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopologyBuilder;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequenceStatistics;
@@ -69,11 +70,14 @@ public class ExceptionCountAnomalyDetection extends BaseFunction {
 			collector.emit(new Values(logSequenceStatistics));
 		}
 
-		// Store the numExceptions of the current LogSequence
-		sequenceNumExceptions.addValue(numExceptions);
-
-		// Store the list
-		sequenceNumExceptionsMap.put(logSequence.getSequenceName(), sequenceNumExceptions);
+		System.out.println(sequenceNumExceptions.getN());
+		if(sequenceNumExceptions.getN() < sample_size_max){
+			// Store the numExceptions of the current LogSequence
+			sequenceNumExceptions.addValue(numExceptions);
+			sequenceNumExceptionsMap.put(logSequence.getSequenceName(), sequenceNumExceptions);
+		} else {
+			log.info("Learning algorithm full: " + logSequence.getSequenceName());
+		}
 	}
 
 	private int countExceptions(LogSequence logSequence){

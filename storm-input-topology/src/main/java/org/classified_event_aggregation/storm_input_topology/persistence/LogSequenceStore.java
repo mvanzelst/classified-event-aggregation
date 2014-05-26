@@ -38,7 +38,7 @@ public class LogSequenceStore implements State {
 	 */
 	public LogSequenceStore(Config config) {
 		cluster = Cluster.builder().addContactPoint(config.node).build();
-		dropTablesAndKeySpace();
+		//dropTablesAndKeySpace();
 		createTablesAndKeySpace();
 		session = cluster.connect(config.keySpace);
 		insertStmt = session.prepare("INSERT INTO log_sequence_statistic (sequenceId, sequenceName, descriptionHash, description, timestamp) VALUES (?, ?, ?, ?, ?)");

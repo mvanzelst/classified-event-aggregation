@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
@@ -39,15 +40,15 @@ public class Action {
 		model.addAttribute("applications", statisticService.getApplications());
 	}
 	
-	@RequestMapping("/application/*/monitor")
+	@RequestMapping("/application/monitor")
 	public String monitorApplication(){
 		return "monitor-application";
 	}
 
-	@RequestMapping("/application/{applicationName}/sequence/{sequenceName}/thresholds")
+	@RequestMapping("/application/sequence/thresholds")
 	public String thresholds(
-			@PathVariable String applicationName,
-			@PathVariable String sequenceName,
+			@RequestParam String applicationName,
+			@RequestParam String sequenceName,
 			Model model
 		){
 		model.addAttribute("durations", statisticService.getDurations(applicationName, sequenceName, 1000, null, null, true).toString());
@@ -62,11 +63,11 @@ public class Action {
 		return "monitor-sequence";
 	}
 	
-	@RequestMapping(value = "/rest/application/{applicationName}/monitor", produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/rest/application/monitor", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String monitorApplicationRest(
 			@RequestParam(defaultValue="1") boolean filterOn,
 			@RequestParam(defaultValue="1000") int limit,
-			@PathVariable String applicationName
+			@RequestParam String applicationName
 		){
 		JsonArray jsonArray = new JsonArray();
 		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getLogSequenceStatistics(applicationName, limit, null, null, true);
@@ -76,12 +77,12 @@ public class Action {
 		return jsonArray.toString();
 	}
 
-	@RequestMapping(value = "/rest/application/{applicationName}/sequence/{sequenceName}/monitor", produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/rest/application/monitor/sequence", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String monitorSequenceRest(
 			@RequestParam(defaultValue="1") boolean filterOn,
 			@RequestParam(defaultValue="1000") int limit,
-			@PathVariable String applicationName,
-			@PathVariable String sequenceName
+			@RequestParam String applicationName,
+			@RequestParam String sequenceName
 		){
 		JsonArray jsonArray = new JsonArray();
 		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getLogSequenceStatistics(applicationName, sequenceName, limit, null, null, true);
@@ -123,6 +124,29 @@ public class Action {
 	@RequestMapping("/")
 	public String getMain(){
 		return "main";
+	}
+	
+	@RequestMapping(value = "/txt", produces = MediaType.TEXT_PLAIN_VALUE)
+	public @ResponseBody String csv(
+			@RequestParam String applicationName,
+			@RequestParam String sequenceName,
+			@RequestParam(defaultValue="duration") String type
+		){
+		StringBuilder sb = new StringBuilder();
+		
+		JsonArray values; 
+		if(type.contentEquals("duration")){
+			values = statisticService.getStandardScoresOfDuration(applicationName, sequenceName, -1, null, null, false);
+		} else if(type.contentEquals("num_exceptions")){
+			values = statisticService.getNumExceptions(applicationName, sequenceName, -1, null, null, false);
+		} else {
+			throw new IllegalArgumentException();
+		}
+		
+		for (JsonElement element : values) {
+			sb.append(element.getAsDouble()).append("\n");
+		}
+		return sb.toString();
 	}
 
 }

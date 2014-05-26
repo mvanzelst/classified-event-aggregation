@@ -12,7 +12,7 @@ public class Classification {
 
 	private final String value;
 	private final String key;
-	private static final Pattern p = Pattern.compile("#([A-Za-z+0-9_-]+):([A-Za-z+0-9_\\-.,]+)"); 
+	private static final Pattern p = Pattern.compile("#([A-Za-z+0-9_-]+):([\\(\\)A-Za-z+0-9_\\-.,/]+)"); 
 	private static final Logger log = LoggerFactory.getLogger(Classification.class);
 
 	public Classification(String key, String value) {

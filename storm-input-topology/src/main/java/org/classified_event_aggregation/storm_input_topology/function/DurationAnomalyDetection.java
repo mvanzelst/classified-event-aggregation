@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.classified_event_aggregation.storm_input_topology.LogMessagesAnomalyDetectionTopologyBuilder;
 import org.classified_event_aggregation.storm_input_topology.model.Classification;
 import org.classified_event_aggregation.storm_input_topology.model.LogMessage;
 import org.classified_event_aggregation.storm_input_topology.model.LogSequence;
@@ -30,7 +31,7 @@ public class DurationAnomalyDetection extends BaseFunction {
 	public void prepare(Map conf, TridentOperationContext context) {
 		super.prepare(conf, context);
 		sample_size_min = (Long) conf.get("algorithm.duration.sample_size.min");
-		sample_size_max = (Long) conf.get("algorithm.duration.sample_size.min");
+		sample_size_max = (Long) conf.get("algorithm.duration.sample_size.max");
 	}
 	
 	@SuppressWarnings("unused")
@@ -55,11 +56,10 @@ public class DurationAnomalyDetection extends BaseFunction {
 			log.warn("Could not find duration of logsequence: {}", logSequence);
 			return;
 		}
-		
 
 		// The timestamp of the last logmessage
 		long timestamp = Iterables.getLast(logSequence.getLogMessages()).getTimestamp();
-		
+
 		if(sequenceDurations.getN() >= sample_size_min){
 			JsonObject stats = new JsonObject();
 			stats.addProperty("duration", duration);
@@ -75,11 +75,13 @@ public class DurationAnomalyDetection extends BaseFunction {
 			collector.emit(new Values(logSequenceStatistics));
 		}
 
-		// Store the numExceptions of the current LogSequence
-		sequenceDurations.addValue(duration);
-
-		// Store the list
-		sequenceDurationsMap.put(logSequence.getSequenceName(), sequenceDurations);
+		if(sequenceDurations.getN() < sample_size_max){
+			// Store the numExceptions of the current LogSequence
+			sequenceDurations.addValue(duration);
+			sequenceDurationsMap.put(logSequence.getSequenceName(), sequenceDurations);
+		} else {
+			log.info("Learning algorithm full: " + logSequence.getSequenceName());
+		}
 	}
 
 	private Long getLogSequenceDuration(LogSequence logSequence){

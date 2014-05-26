@@ -35,7 +35,7 @@ public class LogMessagesAnomalyDetectionTopologyBuilder implements Serializable 
 
 	private IBatchSpout logRecordSpout;
 	private LogMessageStoreStateFactory logMessageStoreStateFactory;
-
+	
 	public StormTopology buildTopology() {
 
 		TridentTopology topology = new TridentTopology();
@@ -86,10 +86,10 @@ public class LogMessagesAnomalyDetectionTopologyBuilder implements Serializable 
 	public static void main(String[] args) throws Exception {
 		// @todo Add database conf
 		Config topologyConf = new Config();
-		topologyConf.put("algorithm.duration.sample_size.min", 20);
-		topologyConf.put("algorithm.duration.sample_size.max", 100);
-		topologyConf.put("algorithm.exception_count.sample_size.min", 20);
-		topologyConf.put("algorithm.exception_count.sample_size.max", 100);
+		topologyConf.put("algorithm.duration.sample_size.min", 40);
+		topologyConf.put("algorithm.duration.sample_size.max", 40);
+		topologyConf.put("algorithm.exception_count.sample_size.min", 40);
+		topologyConf.put("algorithm.exception_count.sample_size.max", 40);
 
 		topologyConf.setMaxSpoutPending(5);
 		LogMessagesAnomalyDetectionTopologyBuilder self = new LogMessagesAnomalyDetectionTopologyBuilder();

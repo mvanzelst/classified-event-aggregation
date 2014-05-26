@@ -6,7 +6,7 @@
 #sidebar-wrapper {
   margin-left: -250px;
   left: 250px;
-  width: 250px;
+  width: 225px;
   float: left;
   height: 100%;
   overflow-y: auto;
@@ -36,15 +36,6 @@
   margin-left: 20px;
   line-height: 65px;
   display: inline-block;
-}
-
-#sidebar-wrapper {
-  left: 0;
-}
-
-#sidebar-wrapper {
-  left: 250px;
-  width: 250px;
 }
 
 .inset {

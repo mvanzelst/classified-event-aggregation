@@ -6,8 +6,8 @@
 			<ul class="nav nav-list tree">
 				<li>
 					<a 
-						href="<@spring.url "/application/${application.name}/monitor" />"
-						<#if currenturl == "/application/${application.name}/monitor">class="current"</#if>
+						href="<@spring.url "/application/monitor?applicationName=${application.name?url}" />"
+						<#if currenturl == "/application/monitor?applicationName=${application.name}">class="current"</#if>
 					>
 					Monitor
 					</a>
@@ -21,16 +21,16 @@
 							<ul class="nav nav-list tree">
 								<li>
 									<a 
-										href="<@spring.url "/application/${application.name}/sequence/${sequence.name}/monitor" />"
-										<#if currenturl == "/application/${application.name}/sequence/${sequence.name}/monitor">class="current"</#if>
+										href="<@spring.url "/application/monitor/sequence?applicationName=${application.name?url}&sequenceName=${sequence.name?url}" />"
+										<#if currenturl == "/application/monitor/sequence?applicationName=${application.name}&sequenceName=${sequence.name}">class="current"</#if>
 									>
 									Monitor
 									</a>
 								</li>
 								<li>
 									<a 
-										href="<@spring.url "/application/${application.name}/sequence/${sequence.name}/thresholds" />"
-										<#if currenturl == "/application/${application.name}/sequence/${sequence.name}/thresholds">class="current"</#if>
+										href="<@spring.url "/application/sequence/thresholds?applicationName=${application.name?url}&sequenceName=${sequence.name?url}" />"
+										<#if currenturl == "/application/sequence/thresholds?applicationName=${application.name}&sequenceName=${sequence.name}">class="current"</#if>
 									>
 									Thresholds
 									</a>

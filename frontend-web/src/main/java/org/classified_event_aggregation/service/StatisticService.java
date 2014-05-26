@@ -70,14 +70,14 @@ public class StatisticService {
 		List<LogSequenceStatistics> logSequenceStatistics = getLogSequenceStatistics(applicationName, sequenceName, algorithmName, limit, start, end, reverse);
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
 			JsonObject statistics = logSequenceStatisticsObject.getStatistics();
-			double stdDev = statistics.get(fieldName).getAsDouble();
+			double stdDev = statistics.get("standard_deviation").getAsDouble();
 			if(stdDev == 0){
 				output.add(new JsonPrimitive(0));
 				continue;
 			}
 			double mean = statistics.get("mean").getAsDouble();
-			double duration = statistics.get(fieldName).getAsDouble();
-			double stdScore = (duration - mean) / stdDev;
+			double observation = statistics.get(fieldName).getAsDouble();
+			double stdScore = (observation - mean) / stdDev;
 			output.add(new JsonPrimitive(stdScore));
 		}
 		return output;

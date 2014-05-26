@@ -13,6 +13,9 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.spi.LoggingEvent;
 
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+
 /**
  * 
  * Based on {@link org.apache.log4j.net.SocketNode}
@@ -25,7 +28,9 @@ public class SocketNode implements Runnable {
 	private Socket socket;
 	private ObjectInputStream ois;
 	private KafkaLogPublisher kafkaLogPublisher;
-	private final String applicationName;
+	private final String APPLICATION_NAME;
+	private final Layout DESCRIPTION_LAYOUT = new EnhancedPatternLayout("%d [%t] %-5p %-30.30c{1} - %m #SEQUENCE_NAME:%X{SEQUENCE_NAME} #SEQUENCE_ID:%X{SEQUENCE_ID} #LOG_LEVEL:%p");
+	private final Layout DATE_LAYOUT = new EnhancedPatternLayout("%d{ISO8601}{UTC}");
 
 	static Logger logger = Logger.getLogger(SocketNode.class);
 
@@ -36,20 +41,20 @@ public class SocketNode implements Runnable {
 		} catch (Exception e) {
 			logger.error("Could not open ObjectInputStream to " + socket, e);
 		}
-		this.applicationName = applicationName;
+		this.APPLICATION_NAME = applicationName;
 	}
 
 	public void run() {
 		LoggingEvent event;
 		Logger remoteLogger;
-		Layout patternLayout = new EnhancedPatternLayout("{\"application_name\":\""+ applicationName +"\", \"description\": \"%d [%t] %-5p %-30.30c{1} - %m #SEQUENCE_NAME:%X{SEQUENCE_NAME} #SEQUENCE_ID:%X{SEQUENCE_ID} #LOG_LEVEL:%p\", \"date\": \"%d{ISO8601}{UTC}\"} %n");
+		
 		try {
 			kafkaLogPublisher = new KafkaLogPublisher();
 			while (true) {
 				// read an event from the wire
 				event = (LoggingEvent) ois.readObject();
-				String message = patternLayout.format(event);
-				System.out.println(message);
+				String message = parseJSON(event).toString();
+				System.out.println(message + "\n");
 				kafkaLogPublisher.send(new ProducerData<String, String>("logs", message));
 			}
 		} catch (java.io.EOFException e) {
@@ -70,5 +75,13 @@ public class SocketNode implements Runnable {
 		} catch (Exception e) {
 			logger.info("Could not close connection.", e);
 		}
+	}
+	
+	private JsonObject parseJSON(LoggingEvent event){
+		JsonObject job = new JsonObject();
+		job.addProperty("application_name", APPLICATION_NAME);
+		job.addProperty("description", DESCRIPTION_LAYOUT.format(event));
+		job.addProperty("date", DATE_LAYOUT.format(event));
+		return job;
 	}
 }
