@@ -14,7 +14,7 @@ import com.google.gson.JsonObject;
 	name="threshold", 
 	uniqueConstraints = {
 		@UniqueConstraint(
-				columnNames={"algorithmName", "applicationName", "sequenceName"}
+				columnNames={"dimensionlessStatisticType", "applicationName", "sequenceName"}
 		)
 	}
 )
@@ -25,7 +25,7 @@ public class Threshold {
 	private Long id;
 	
 	@Size(max = 255)
-	private String algorithmName;
+	private DimensionlessStatisticType dimensionlessStatisticType;
 	
 	@Size(max = 255)
 	private String applicationName;
@@ -43,12 +43,13 @@ public class Threshold {
 		this.id = id;
 	}
 
-	public String getAlgorithmName() {
-		return algorithmName;
+	public DimensionlessStatisticType getDimensionlessStatisticType() {
+		return dimensionlessStatisticType;
 	}
 
-	public void setAlgorithmName(String algorithmName) {
-		this.algorithmName = algorithmName;
+	public void setDimensionlessStatisticType(
+			DimensionlessStatisticType dimensionlessStatisticType) {
+		this.dimensionlessStatisticType = dimensionlessStatisticType;
 	}
 
 	public String getApplicationName() {
@@ -82,7 +83,7 @@ public class Threshold {
 		if(id != null)
 			output.addProperty("id", id);
 		
-		output.addProperty("algorithmName", algorithmName);
+		output.addProperty("dimensionlessStatisticType", dimensionlessStatisticType.name());
 		output.addProperty("applicationName", applicationName);
 		output.addProperty("sequenceName", sequenceName);
 		output.addProperty("thresholdValue", thresholdValue);
@@ -95,8 +96,8 @@ public class Threshold {
 		// For a new object this field can be empty 
 		if(job.has("id"))
 			output.setId(job.getAsJsonPrimitive("id").getAsLong());
-		
-		output.setAlgorithmName(job.getAsJsonPrimitive("algorithmName").getAsString());
+
+		output.setDimensionlessStatisticType(DimensionlessStatisticType.valueOf(job.getAsJsonPrimitive("dimensionlessStatisticType").getAsString()));
 		output.setApplicationName(job.getAsJsonPrimitive("applicationName").getAsString());		
 		output.setSequenceName(job.getAsJsonPrimitive("sequenceName").getAsString());
 		output.setThresholdValue(job.getAsJsonPrimitive("thresholdValue").getAsDouble());

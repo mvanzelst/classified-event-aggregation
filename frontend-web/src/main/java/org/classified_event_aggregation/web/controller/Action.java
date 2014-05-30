@@ -10,23 +10,23 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.classified_event_aggregation.model.LogSequenceStatistics;
+import org.classified_event_aggregation.domain.DimensionlessStatisticType;
+import org.classified_event_aggregation.domain.LogSequenceStatistics;
+import org.classified_event_aggregation.persistence.mysql.ThresholdRepository;
 import org.classified_event_aggregation.service.StatisticService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.UriUtils;
 
+import com.google.common.collect.Iterables;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 
 @Controller
 public class Action {
@@ -34,119 +34,99 @@ public class Action {
 	@Autowired
 	private StatisticService statisticService;
 	
+	@Autowired
+	private ThresholdRepository thresholdRepository;
+	
 	@ModelAttribute
 	public void getModelAttributes(Model model, HttpServletRequest request) throws UnsupportedEncodingException{
 		model.addAttribute("currenturl", URLDecoder.decode(request.getRequestURI(), "UTF-8"));
 		model.addAttribute("applications", statisticService.getApplications());
 	}
 	
+	@RequestMapping("/")
+	public String index(){
+		return "main";
+	}
+	
 	@RequestMapping("/application/monitor")
 	public String monitorApplication(){
-		return "monitor-application";
+		return "monitor";
 	}
 
+	
 	@RequestMapping("/application/sequence/thresholds")
 	public String thresholds(
 			@RequestParam String applicationName,
 			@RequestParam String sequenceName,
 			Model model
 		){
-		model.addAttribute("durations", statisticService.getDurations(applicationName, sequenceName, 1000, null, null, true).toString());
-		model.addAttribute("standardScoreOfDuration", statisticService.getStandardScoresOfDuration(applicationName, sequenceName, 1000, null, null, true).toString());
-		model.addAttribute("numExceptions", statisticService.getNumExceptions(applicationName, sequenceName, 1000, null, null, true).toString());
-		model.addAttribute("standardScoreOfNumExceptions", statisticService.getStandardScoresOfNumExceptions(applicationName, sequenceName, 1000, null, null, true).toString());
+		// Duration
+		List<Map<String, Object>> dimensionlessStatistics = new ArrayList<Map<String,Object>>();
+		Map<String, Object> dimensionlessStatisticType1 = new HashMap<String, Object>();
+		dimensionlessStatisticType1.put("name", "Standard score of duration");
+		dimensionlessStatisticType1.put("type", "STANDARD_SCORE_OF_SEQUENCE_DURATION");
+		dimensionlessStatisticType1.put("threshold", thresholdRepository.findByApplicationNameAndSequenceNameAndDimensionlessStatisticType(applicationName, sequenceName, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION));
+		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION);
+		JsonArray arr = new JsonArray();
+		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
+			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION.name()));
+		}
+		dimensionlessStatisticType1.put("stats", arr);
+
+		// Num exceptions
+		Map<String, Object> dimensionlessStatisticType2 = new HashMap<String, Object>();
+		dimensionlessStatisticType2.put("name", "Standard score of number of exceptions");
+		dimensionlessStatisticType2.put("type", "STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS");
+		dimensionlessStatisticType2.put("threshold", thresholdRepository.findByApplicationNameAndSequenceNameAndDimensionlessStatisticType(applicationName, sequenceName, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS));
+		logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS);
+		arr = new JsonArray();
+		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
+			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS.name()));
+		}
+		dimensionlessStatisticType2.put("stats", arr);
+
+		dimensionlessStatistics.add(dimensionlessStatisticType1);
+		dimensionlessStatistics.add(dimensionlessStatisticType2);
+
+		model.addAttribute("dimensionlessStatistics", dimensionlessStatistics);
+		model.addAttribute("applicationName", applicationName);
+		model.addAttribute("sequenceName", sequenceName);
 		return "thresholds";
 	}
 
-	@RequestMapping("/application/*/sequence/*/monitor")
-	public String monitorsequence(){
-		return "monitor-sequence";
-	}
-	
 	@RequestMapping(value = "/rest/application/monitor", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String monitorApplicationRest(
 			@RequestParam(defaultValue="1") boolean filterOn,
 			@RequestParam(defaultValue="1000") int limit,
-			@RequestParam String applicationName
-		){
-		JsonArray jsonArray = new JsonArray();
-		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getLogSequenceStatistics(applicationName, limit, null, null, true);
-		for (LogSequenceStatistics logSequenceStatisticObject : logSequenceStatistics) {
-			jsonArray.add(logSequenceStatisticObject.toJSON());
-		}
-		return jsonArray.toString();
-	}
-
-	@RequestMapping(value = "/rest/application/monitor/sequence", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String monitorSequenceRest(
-			@RequestParam(defaultValue="1") boolean filterOn,
-			@RequestParam(defaultValue="1000") int limit,
 			@RequestParam String applicationName,
-			@RequestParam String sequenceName
-		){
-		JsonArray jsonArray = new JsonArray();
-		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getLogSequenceStatistics(applicationName, sequenceName, limit, null, null, true);
-		for (LogSequenceStatistics logSequenceStatisticObject : logSequenceStatistics) {
-			jsonArray.add(logSequenceStatisticObject.toJSON());
+			@RequestParam(required = false, defaultValue="") String sequenceName,
+			@RequestParam DimensionlessStatisticType dimensionlessStatisticType,
+			@RequestParam(required = false, defaultValue="-1") Long start
+		) throws UnsupportedEncodingException {
+		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, limit, start, -1L, false, dimensionlessStatisticType);
+		
+		if(logSequenceStatistics.size() > 0)
+			start = Iterables.getLast(logSequenceStatistics).getEndTimestamp() + 1; // Start of next page is end of this page
+		
+		JsonArray jar = new JsonArray();
+		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
+			jar.add(logSequenceStatisticsObject.toJSON());
 		}
-		return jsonArray.toString();
-	}
-	
-	@RequestMapping(value = "/rest/application/{applicationName}/sequence/{sequenceName}/algorithm/{algorithmName}/monitor", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String monitorAlgorithmRest(
-			@RequestParam(defaultValue="1") boolean filterOn,
-			@RequestParam(defaultValue="1000") int limit,
-			@PathVariable String applicationName,
-			@PathVariable String sequenceName,
-			@PathVariable String algorithmName
-		){
-		JsonArray jsonArray = new JsonArray();
-		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getLogSequenceStatistics(applicationName, sequenceName, algorithmName, limit, null, null, true);
-		for (LogSequenceStatistics logSequenceStatisticObject : logSequenceStatistics) {
-			jsonArray.add(logSequenceStatisticObject.toJSON());
-		}
-		return jsonArray.toString();
-	}
-	
-	@RequestMapping(value = "/rest/application/{applicationName}/sequence/{sequenceName}/distinct_algorithm_names", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String monitorAlgorithmRest(
-			@PathVariable String applicationName,
-			@PathVariable String sequenceName
-		){
-		JsonArray jsonArray = new JsonArray();
-		List<String> algorithmNames = statisticService.getDistinctAlgorithmNames(applicationName, sequenceName);
-		for (String algorithmName : algorithmNames) {
-			jsonArray.add(new JsonPrimitive(algorithmName));
-		}
-		return jsonArray.toString();
-	}
 
-	@RequestMapping("/")
-	public String getMain(){
-		return "main";
-	}
-	
-	@RequestMapping(value = "/txt", produces = MediaType.TEXT_PLAIN_VALUE)
-	public @ResponseBody String csv(
-			@RequestParam String applicationName,
-			@RequestParam String sequenceName,
-			@RequestParam(defaultValue="duration") String type
-		){
-		StringBuilder sb = new StringBuilder();
-		
-		JsonArray values; 
-		if(type.contentEquals("duration")){
-			values = statisticService.getStandardScoresOfDuration(applicationName, sequenceName, -1, null, null, false);
-		} else if(type.contentEquals("num_exceptions")){
-			values = statisticService.getNumExceptions(applicationName, sequenceName, -1, null, null, false);
-		} else {
-			throw new IllegalArgumentException();
-		}
-		
-		for (JsonElement element : values) {
-			sb.append(element.getAsDouble()).append("\n");
-		}
-		return sb.toString();
+		JsonObject job = new JsonObject();
+		job.add("log_sequence_stats", jar);
+		job.addProperty("next", 
+			String.format(
+				"/rest/application/monitor?applicationName=%s&sequenceName=%s&dimensionlessStatisticType=%s&limit=%s&filterOn=%s&start=%s",
+				UriUtils.encodeQueryParam(applicationName, "UTF-8"),
+				UriUtils.encodeQueryParam(sequenceName, "UTF-8"),
+				UriUtils.encodeQueryParam(dimensionlessStatisticType.name(), "UTF-8"),
+				"" + limit,
+				filterOn ? "1" : "",
+				"" + start
+			)
+		);
+		return job.toString();
 	}
 
 }

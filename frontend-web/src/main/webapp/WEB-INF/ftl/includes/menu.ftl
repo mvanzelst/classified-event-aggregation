@@ -7,7 +7,7 @@
 				<li>
 					<a 
 						href="<@spring.url "/application/monitor?applicationName=${application.name?url}" />"
-						<#if currenturl == "/application/monitor?applicationName=${application.name}">class="current"</#if>
+						<#if RequestParameters.sequenceName?has_content && RequestParameters.applicationName == application.name>class="current"</#if>
 					>
 					Monitor
 					</a>
@@ -21,16 +21,16 @@
 							<ul class="nav nav-list tree">
 								<li>
 									<a 
-										href="<@spring.url "/application/monitor/sequence?applicationName=${application.name?url}&sequenceName=${sequence.name?url}" />"
-										<#if currenturl == "/application/monitor/sequence?applicationName=${application.name}&sequenceName=${sequence.name}">class="current"</#if>
+										href="<@spring.url "/application/monitor?applicationName=${application.name?url}&amp;sequenceName=${sequence.name?url}" />"
+										<#if RequestParameters.applicationName?has_content && RequestParameters.sequenceName?has_content && currenturl == "/application/monitor" && RequestParameters.applicationName == application.name && RequestParameters.sequenceName == sequence.name>class="current"</#if>
 									>
 									Monitor
 									</a>
 								</li>
 								<li>
 									<a 
-										href="<@spring.url "/application/sequence/thresholds?applicationName=${application.name?url}&sequenceName=${sequence.name?url}" />"
-										<#if currenturl == "/application/sequence/thresholds?applicationName=${application.name}&sequenceName=${sequence.name}">class="current"</#if>
+										href="<@spring.url "/application/sequence/thresholds?applicationName=${application.name?url}&amp;sequenceName=${sequence.name?url}" />"
+										<#if RequestParameters.applicationName?has_content && RequestParameters.sequenceName?has_content && currenturl == "/application/sequence/thresholds" && RequestParameters.applicationName == application.name && RequestParameters.sequenceName == sequence.name>class="current"</#if>
 									>
 									Thresholds
 									</a>

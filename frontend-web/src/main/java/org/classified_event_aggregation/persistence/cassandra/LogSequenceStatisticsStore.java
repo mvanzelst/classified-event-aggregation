@@ -12,6 +12,7 @@ import org.classified_event_aggregation.domain.Application;
 import org.classified_event_aggregation.domain.LogSequence;
 import org.classified_event_aggregation.domain.LogSequenceStatistics;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
@@ -75,43 +76,41 @@ public class LogSequenceStatisticsStore {
 		}
 		return new ArrayList<>(applications.values());
 	}
-	
-	public List<LogSequenceStatistics> getLogSequenceStatistics(String applicationName, Long start, Long end, int limit, boolean reverse){
-		return getLogSequenceStatistics(applicationName, null, null, start, end, limit, reverse, "log_sequence_statistics_by_application_name");
-	}
-	
-	public List<LogSequenceStatistics> getLogSequenceStatistics(String applicationName, String sequenceName, Long start, Long end, int limit, boolean reverse){
-		return getLogSequenceStatistics(applicationName, sequenceName, null, start, end, limit, reverse, "log_sequence_statistics_by_sequence_name");
-	}
-	
-	public List<LogSequenceStatistics> getLogSequenceStatistics(String applicationName, String sequenceName, String algorithmName, Long start, Long end, int limit, boolean reverse){
-		return getLogSequenceStatistics(applicationName, sequenceName, algorithmName, start, end, limit, reverse, "log_sequence_statistics_by_algorithm_name");
-	}
 
-	private List<LogSequenceStatistics> getLogSequenceStatistics(String applicationName, String sequenceName, String algorithmName, Long start, Long end, int limit, boolean reverse, String tableName){
+	public List<LogSequenceStatistics> getLogSequenceStatistics(String applicationName, String sequenceName, String algorithmName, Long start, Long end, int limit, boolean reverse){
+		String tableName;
+		if(StringUtils.hasText(sequenceName) && StringUtils.hasText(algorithmName)){
+			tableName = "log_sequence_statistics_by_algorithm_name";
+		} else if(StringUtils.hasText(sequenceName)) {
+			tableName = "log_sequence_statistics_by_sequence_name";
+		} else {
+			tableName = "log_sequence_statistics_by_application";
+		}
+		
 		Select query = QueryBuilder
 				.select().all()
 				.from(tableName);
 
 		query.where(QueryBuilder.eq("applicationName", applicationName));
 
-		if(sequenceName != null)
+
+		if(StringUtils.hasText(sequenceName))
 			query.where(QueryBuilder.eq("sequenceName", sequenceName));
 
-		if(algorithmName != null)
+		if(StringUtils.hasText(algorithmName))
 			query.where(QueryBuilder.eq("algorithmName", algorithmName));
 
-		if(start != null)
+		if(start > -1)
 			query.where(QueryBuilder.gte("endTimestamp", start));
 
-		if(end != null)
+		if(end > -1)
 			query.where(QueryBuilder.lt("endTimestamp", end));
 		
 		if(limit > 0)
 			query.limit(limit);
 
 		query.orderBy((!reverse ? QueryBuilder.asc("endTimestamp") : QueryBuilder.desc("endTimestamp")));
-
+		System.out.println(query.getQueryString());
 		List<LogSequenceStatistics> output = new ArrayList<>();
 		ResultSet result = session.execute(query);
 		JsonParser jsonParser = new JsonParser();
