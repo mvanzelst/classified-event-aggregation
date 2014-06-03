@@ -163,7 +163,8 @@ $
 						<div class="algorithm-statistics">
 							<p>${dimensionlessStatistic["name"]}</p>
 							<div id="histogram-${dimensionlessStatistic["type"]}"></div>
-							<div class="algorithm-threshold">
+							<div class="histogram-axis-label" style="margin-left: 20px;">Number of exceptions --&gt;</div>
+							<div class="algorithm-threshold" style="margin-top: 20px;">
 								<form class="algorithm-threshold-form">
 									<input type="hidden" name="id" value="<#if dimensionlessStatistic["threshold"]?? >${dimensionlessStatistic["threshold"].id}</#if>" />
 									<input type="hidden" name="algorithmName" value="${dimensionlessStatistic["type"]}" />

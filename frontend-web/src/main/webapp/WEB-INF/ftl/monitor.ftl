@@ -2,11 +2,6 @@
 <html lang="en">
 <head>
 	<#include "includes/header.ftl">
-	<script>
-	  $(function() {
-	    $( "#accordion" ).accordion();
-	  });
-	</script>
 </head>
 <body>
 	<div id="wrapper">
@@ -24,7 +19,9 @@
 					<option>Thresholds enabled</option>
 					<option>Thresholds disabled</option>
 				</select>
-				<div style="height:20px;"></div>
+				<div class="well">
+					<a href="">12 new results</a>
+				</div>
 				<table class="table table-striped table-bordered">
 					<tr>
 						<td>Sequence name</td> 
@@ -35,12 +32,12 @@
 						<td><a href="bbc34e48-63a5-4c00-b901-0fdfcc3461a8">bbc34e48-63a5-4c00-b901-0fdfcc3461a8</a></td>
 					</tr>
 					<tr>
-						<td>Start</td> 
-						<td>DATE HERE</td>
+						<td>Start</td>
+						<td>Sat 31 May 2014 12:37:50 PM CEST</td>
 					</tr>
 					<tr>
 						<td>End</td> 
-						<td>DATE HERE</td>
+						<td>Sat 31 May 2014 12:37:58 PM CEST</td>
 					</tr>
 					<tr>
 						<td>Statisic type</td> 
@@ -62,11 +59,11 @@
 					</tr>
 					<tr>
 						<td>Start</td> 
-						<td>DATE HERE</td>
+						<td>Sat 31 May 2014 12:36:59 PM CEST</td>
 					</tr>
 					<tr>
 						<td>End</td> 
-						<td>DATE HERE</td>
+						<td>Sat 31 May 2014 12:37:03 PM CEST</td>
 					</tr>
 					<tr>
 						<td>Statisic type</td> 

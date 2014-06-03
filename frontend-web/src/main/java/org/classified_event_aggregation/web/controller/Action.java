@@ -27,6 +27,7 @@ import org.springframework.web.util.UriUtils;
 import com.google.common.collect.Iterables;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 @Controller
 public class Action {
@@ -56,17 +57,17 @@ public class Action {
 	
 	@RequestMapping("/application/sequence/thresholds")
 	public String thresholds(
-			@RequestParam String applicationName,
-			@RequestParam String sequenceName,
-			Model model
-		){
+		@RequestParam String applicationName,
+		@RequestParam String sequenceName,
+		Model model
+	){
 		// Duration
 		List<Map<String, Object>> dimensionlessStatistics = new ArrayList<Map<String,Object>>();
 		Map<String, Object> dimensionlessStatisticType1 = new HashMap<String, Object>();
 		dimensionlessStatisticType1.put("name", "Standard score of duration");
 		dimensionlessStatisticType1.put("type", "STANDARD_SCORE_OF_SEQUENCE_DURATION");
 		dimensionlessStatisticType1.put("threshold", thresholdRepository.findByApplicationNameAndSequenceNameAndDimensionlessStatisticType(applicationName, sequenceName, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION));
-		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION);
+		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, false, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION);
 		JsonArray arr = new JsonArray();
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
 			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION.name()));
@@ -78,11 +79,12 @@ public class Action {
 		dimensionlessStatisticType2.put("name", "Standard score of number of exceptions");
 		dimensionlessStatisticType2.put("type", "STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS");
 		dimensionlessStatisticType2.put("threshold", thresholdRepository.findByApplicationNameAndSequenceNameAndDimensionlessStatisticType(applicationName, sequenceName, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS));
-		logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS);
+		logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 100, -1L, -1L, false, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS);
 		arr = new JsonArray();
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
 			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS.name()));
 		}
+		arr.add(new JsonPrimitive(65535));
 		dimensionlessStatisticType2.put("stats", arr);
 
 		dimensionlessStatistics.add(dimensionlessStatisticType1);
@@ -102,7 +104,7 @@ public class Action {
 			@RequestParam(required = false, defaultValue="") String sequenceName,
 			@RequestParam DimensionlessStatisticType dimensionlessStatisticType,
 			@RequestParam(required = false, defaultValue="-1") Long start
-		) throws UnsupportedEncodingException {
+	) throws UnsupportedEncodingException {
 		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, limit, start, -1L, false, dimensionlessStatisticType);
 		
 		if(logSequenceStatistics.size() > 0)
@@ -127,6 +129,39 @@ public class Action {
 			)
 		);
 		return job.toString();
+	}
+	@RequestMapping(value = "/txt", produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody String export(
+			@RequestParam(defaultValue="1") boolean filterOn,
+			@RequestParam(defaultValue="1000") int limit,
+			@RequestParam String applicationName,
+			@RequestParam(required = false, defaultValue="") String sequenceName,
+			@RequestParam DimensionlessStatisticType dimensionlessStatisticType,
+			@RequestParam(required = false, defaultValue="-1") Long start
+	) throws UnsupportedEncodingException {
+		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, limit, start, -1L, false, dimensionlessStatisticType);
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("Value, StdDev, Standard Score\n");
+		
+		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
+			switch (dimensionlessStatisticType) {
+			case STANDARD_SCORE_OF_SEQUENCE_DURATION:
+				sb.append(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive("duration").getAsDouble());
+				sb.append(",");
+				break;
+			case STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS:
+				sb.append(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive("num_exceptions").getAsDouble());
+				sb.append(",");
+				break;
+			}
+			sb.append(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive("standard_deviation").getAsDouble());
+			sb.append(",");
+			sb.append(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(dimensionlessStatisticType.name()).getAsDouble());
+			sb.append("\n");
+		}
+		
+		return sb.toString();
 	}
 
 }

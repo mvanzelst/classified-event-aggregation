@@ -17,6 +17,8 @@ import com.google.gson.JsonObject;
 @Service
 public class StatisticService {
 
+	public final static int MAX_VALUE = 65535;
+	
 	@Autowired
 	private LogSequenceStatisticsStore statisticStore;
 
@@ -53,12 +55,16 @@ public class StatisticService {
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
 			JsonObject statistics = logSequenceStatisticsObject.getStatistics();
 			double stdDev = statistics.get("standard_deviation").getAsDouble();
-			if(stdDev == 0){
-				statistics.addProperty(statisticType.name(), 0);
-				continue;
-			}
 			double mean = statistics.get("mean").getAsDouble();
 			double observation = statistics.get(fieldName).getAsDouble();
+			if(stdDev == 0){
+				if((observation - mean) > 0){
+					statistics.addProperty(statisticType.name(), MAX_VALUE);
+				} else {
+					statistics.addProperty(statisticType.name(), 0);
+				}
+				continue;
+			}
 			double stdScore = (observation - mean) / stdDev;
 			statistics.addProperty(statisticType.name(), stdScore);
 		}

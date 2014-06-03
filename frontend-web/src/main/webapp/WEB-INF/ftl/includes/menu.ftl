@@ -7,7 +7,7 @@
 				<li>
 					<a 
 						href="<@spring.url "/application/monitor?applicationName=${application.name?url}" />"
-						<#if RequestParameters.sequenceName?has_content && RequestParameters.applicationName == application.name>class="current"</#if>
+						<#if RequestParameters.applicationName?has_content && RequestParameters.applicationName == application.name>class="current"</#if>
 					>
 					Monitor
 					</a>
