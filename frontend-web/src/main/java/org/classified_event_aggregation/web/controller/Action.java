@@ -84,7 +84,6 @@ public class Action {
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
 			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS.name()));
 		}
-		arr.add(new JsonPrimitive(65535));
 		dimensionlessStatisticType2.put("stats", arr);
 
 		dimensionlessStatistics.add(dimensionlessStatisticType1);

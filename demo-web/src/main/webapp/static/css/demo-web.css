@@ -1,0 +1,24 @@
+@CHARSET "UTF-8";
+
+.box {
+	margin-left: 0;
+	margin-right: 0;
+	background-color: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px 4px 4px 4px;
+	box-shadow: none;
+	position: relative;
+	padding: 45px 15px 15px;
+	margin: 0 -15px 15px;
+}
+
+.box .header {
+	position: absolute;
+	top: 15px;
+	left: 15px;
+	font-size: 12px;
+	font-weight: 700;
+	color: #bbb;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}

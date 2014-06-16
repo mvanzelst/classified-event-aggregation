@@ -31,7 +31,7 @@ public class LogSequenceStatisticsStore {
 	@PostConstruct
 	private void setCassandraConnection(){
 		Cluster cluster = Cluster.builder().addContactPoint("localhost").build();
-		this.session = cluster.connect("cea");
+		this.session = cluster.connect("cea_demo");
 	}
 	
 	@PreDestroy
