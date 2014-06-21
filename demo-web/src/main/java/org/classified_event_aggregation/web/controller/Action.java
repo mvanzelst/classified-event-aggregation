@@ -54,8 +54,8 @@ public class Action {
 		logMessages.add(new LogMessage("demo-web", "Starting sequence #SEQUENCE_NAME:GET:/rest/user/{uuid} #LOG_LEVEL:INFO #SEQUENCE_STATUS:STARTED #SEQUENCE_ID:" + sequenceId, System.currentTimeMillis()));
 		try { 
 			try {
+				// TODO sometimes this generates a value with a standard score higher than 6
 				long randomSleep = (long) ((Math.abs(new Random().nextGaussian()) + 1) * 0.9 * delay);
-				System.out.println(randomSleep);
 				Thread.sleep(randomSleep);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -85,5 +85,11 @@ public class Action {
 	public @ResponseBody void setThrowException(@PathVariable boolean throwException){
 		Action.throwException = throwException;
 	}
+	
+	@RequestMapping(value="/rest/reset")
+	public @ResponseBody void reset(){
+		logSequenceService.setup();
+	}
+
 
 }

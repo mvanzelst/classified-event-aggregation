@@ -25,6 +25,8 @@ public class LogSequenceService {
 
 	private LogSequenceStatisticsStore logSequenceStatisticsStore;
 	private LogMessageStore logMessageStore;
+	private DurationStatisticsGatherer durationStatisticsGatherer;
+	private ExceptionStatisticsGatherer exceptionStatisticsGatherer;
 	
 	@PostConstruct
 	public void setup(){
@@ -36,7 +38,7 @@ public class LogSequenceService {
 					"WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};"
 		);
 		session.shutdown();
-		
+
 		LogSequenceStatisticsStore.Config statisticsStoreConfig = new LogSequenceStatisticsStore.Config();
 		statisticsStoreConfig.keySpace = "cea_demo";
 		statisticsStoreConfig.node = "localhost";
@@ -46,6 +48,9 @@ public class LogSequenceService {
 		logMessageStoreConfig.keySpace = "cea_demo";
 		logMessageStoreConfig.node = "localhost";
 		logMessageStore = new LogMessageStore(logMessageStoreConfig);
+		
+		durationStatisticsGatherer = new DurationStatisticsGatherer();
+		exceptionStatisticsGatherer = new ExceptionStatisticsGatherer();
 	}
 	
 	public void store(List<LogMessage> logMessages) {
@@ -69,24 +74,24 @@ public class LogSequenceService {
 			logMessages
 		);
 		
-		LogSequenceStatistics logSequenceStatistics = ExceptionStatisticsGatherer.execute(logSequence);
+		LogSequenceStatistics logSequenceStatistics = exceptionStatisticsGatherer.execute(logSequence);
 		if(logSequenceStatistics != null){
 			logSequenceStatisticsStore.storeLogSequenceStatistics(logSequenceStatistics);
 		}
 		
-		logSequenceStatistics = DurationStatisticsGatherer.execute(logSequence);
+		logSequenceStatistics = durationStatisticsGatherer.execute(logSequence);
 		if(logSequenceStatistics != null){
 			logSequenceStatisticsStore.storeLogSequenceStatistics(logSequenceStatistics);
 		}
 	}
 	
-	private static class ExceptionStatisticsGatherer {
+	private class ExceptionStatisticsGatherer {
 		
-		private static Map<String, DescriptiveStatistics> sequenceNumExceptionsMap = new HashMap<>();
-		private static final int sample_size_max = 10;
-		private static final int sample_size_min = 10;
+		private Map<String, DescriptiveStatistics> sequenceNumExceptionsMap = new HashMap<>();
+		private final int sample_size_max = 10;
+		private final int sample_size_min = 10;
 		
-		public static LogSequenceStatistics execute(LogSequence logSequence) {
+		public LogSequenceStatistics execute(LogSequence logSequence) {
 			DescriptiveStatistics sequenceNumExceptions;
 			if(sequenceNumExceptionsMap.containsKey(logSequence.getSequenceName())){
 				sequenceNumExceptions = sequenceNumExceptionsMap.get(logSequence.getSequenceName());
@@ -126,7 +131,7 @@ public class LogSequenceService {
 			return null;
 		}
 
-		private static int countExceptions(LogSequence logSequence){
+		private int countExceptions(LogSequence logSequence){
 			int numExceptions = 0;
 			for (LogMessage logMessage : logSequence.getLogMessages()) {
 				if(logMessage.getClassifications().containsKey("LOG_LEVEL") && logMessage.getClassifications().get("LOG_LEVEL").getValue().contentEquals("ERROR"))
@@ -137,12 +142,12 @@ public class LogSequenceService {
 		
 	}
 	
-	private static class DurationStatisticsGatherer {
-		private static Map<String, DescriptiveStatistics> sequenceDurationsMap = new HashMap<>();
-		private static final int sample_size_max = 10;
-		private static final int sample_size_min = 10;
+	private class DurationStatisticsGatherer {
+		private Map<String, DescriptiveStatistics> sequenceDurationsMap = new HashMap<>();
+		private final int sample_size_max = 10;
+		private final int sample_size_min = 10;
 	
-		public static LogSequenceStatistics execute(LogSequence logSequence) {
+		public LogSequenceStatistics execute(LogSequence logSequence) {
 			DescriptiveStatistics sequenceDurations;
 			if(sequenceDurationsMap.containsKey(logSequence.getSequenceName())){
 				sequenceDurations = sequenceDurationsMap.get(logSequence.getSequenceName());
@@ -184,7 +189,7 @@ public class LogSequenceService {
 			return null;
 		}
 	
-		private static Long getLogSequenceDuration(LogSequence logSequence){
+		private Long getLogSequenceDuration(LogSequence logSequence){
 			Long start = null, end = null;
 			for (LogMessage logMessage : logSequence.getLogMessages()){
 				Classification status = logMessage.getClassifications().get("SEQUENCE_STATUS");

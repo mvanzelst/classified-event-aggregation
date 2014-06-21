@@ -67,7 +67,7 @@ public class Action {
 		dimensionlessStatisticType1.put("name", "Standard score of duration");
 		dimensionlessStatisticType1.put("type", "STANDARD_SCORE_OF_SEQUENCE_DURATION");
 		dimensionlessStatisticType1.put("threshold", thresholdRepository.findByApplicationNameAndSequenceNameAndDimensionlessStatisticType(applicationName, sequenceName, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION));
-		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, false, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION);
+		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION);
 		JsonArray arr = new JsonArray();
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
 			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION.name()));
@@ -79,7 +79,7 @@ public class Action {
 		dimensionlessStatisticType2.put("name", "Standard score of number of exceptions");
 		dimensionlessStatisticType2.put("type", "STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS");
 		dimensionlessStatisticType2.put("threshold", thresholdRepository.findByApplicationNameAndSequenceNameAndDimensionlessStatisticType(applicationName, sequenceName, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS));
-		logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 100, -1L, -1L, false, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS);
+		logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS);
 		arr = new JsonArray();
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
 			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS.name()));
