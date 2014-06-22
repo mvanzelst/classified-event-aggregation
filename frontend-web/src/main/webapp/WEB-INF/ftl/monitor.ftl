@@ -15,65 +15,42 @@
 				<h1>Main</h1>
 			</div>
 			<div class="page-content inset">
-				<select>
-					<option>Thresholds enabled</option>
-					<option>Thresholds disabled</option>
-				</select>
-				<div class="well">
-					<a href="">12 new results</a>
-				</div>
+				<#list logSequenceStatistics as logSequenceStatistic>
 				<table class="table table-striped table-bordered">
 					<tr>
 						<td>Sequence name</td> 
-						<td>/Zoek(action,categorieId,eindDag,eindJaar,eindMaand,origin,sa,sc,searchCategorieId,searchTerm,vanafDag,vanafJaar,vanafMaand,x,zoekMethode)</td>
+						<td>${logSequenceStatistic.sequenceName}</td>
 					</tr>
 					<tr>
 						<td>Sequence id</td> 
-						<td><a href="bbc34e48-63a5-4c00-b901-0fdfcc3461a8">bbc34e48-63a5-4c00-b901-0fdfcc3461a8</a></td>
+						<td>${logSequenceStatistic.sequenceId}</td>
 					</tr>
 					<tr>
 						<td>Start</td>
-						<td>Sat 31 May 2014 12:37:50 PM CEST</td>
+						<td>${logSequenceStatistic.startTimestamp?number_to_datetime}</td>
 					</tr>
 					<tr>
 						<td>End</td> 
-						<td>Sat 31 May 2014 12:37:58 PM CEST</td>
+						<td>${logSequenceStatistic.endTimestamp?number_to_datetime}</td>
 					</tr>
 					<tr>
 						<td>Statisic type</td> 
-						<td>Standard score of duration</td>
+						<td>${logSequenceStatistic.algorithmName}</td>
 					</tr>
 					<tr>
-						<td>Statistic value</td> 
-						<td>3</td>
+						<td>Standard score</td> 
+						<td>${logSequenceStatistic.statistics.get("stdScore")}</td>
+					</tr>
+					<tr>
+						<td>LogMessages</td> 
+						<td>
+							<#list logMessagesBySequenceId[logSequenceStatistic.sequenceId] as logMessage>
+								${logMessage}<br />
+							</#list>
+						</td>
 					</tr>
 				</table>
-				<table class="table table-bordered table-striped">
-					<tr>
-						<td>Sequence name</td> 
-						<td>/Zoek(action,categorieId,eindDag,eindJaar,eindMaand,origin,sa,sc,searchCategorieId,searchTerm,vanafDag,vanafJaar,vanafMaand,x,zoekMethode)</td>
-					</tr>
-					<tr>
-						<td>Sequence id</td> 
-						<td><a href="bbc34e48-63a5-4c00-b901-0fdfcc3461a8">bbc34e48-63a5-4c00-b901-0fdfcc3461a8</a></td>
-					</tr>
-					<tr>
-						<td>Start</td> 
-						<td>Sat 31 May 2014 12:36:59 PM CEST</td>
-					</tr>
-					<tr>
-						<td>End</td> 
-						<td>Sat 31 May 2014 12:37:03 PM CEST</td>
-					</tr>
-					<tr>
-						<td>Statisic type</td> 
-						<td>Standard score of duration</td>
-					</tr>
-					<tr>
-						<td>Statistic value</td> 
-						<td>3</td>
-					</tr>
-				</table>
+				</#list>
 			</div>
 		</div>
 	</div>

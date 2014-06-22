@@ -59,14 +59,14 @@ public class StatisticService {
 			double observation = statistics.get(fieldName).getAsDouble();
 			if(stdDev == 0){
 				if((observation - mean) > 0){
-					statistics.addProperty(statisticType.name(), MAX_VALUE);
+					statistics.addProperty("stdScore", MAX_VALUE);
 				} else {
-					statistics.addProperty(statisticType.name(), 0);
+					statistics.addProperty("stdScore", 0);
 				}
 				continue;
 			}
 			double stdScore = (observation - mean) / stdDev;
-			statistics.addProperty(statisticType.name(), stdScore);
+			statistics.addProperty("stdScore", stdScore);
 		}
 		return logSequenceStatistics;
 	}

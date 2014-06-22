@@ -5,7 +5,7 @@
 <meta name="description" content="">
 <meta name="author" content="">
 
-<title>Starter Template for Bootstrap</title>
+<title>Log analysis system - Front-end</title>
 
 <link href="<@spring.url "/css/sidebar.css" />" rel="stylesheet">
 

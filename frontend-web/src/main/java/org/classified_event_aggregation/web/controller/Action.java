@@ -12,28 +12,39 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.classified_event_aggregation.domain.DimensionlessStatisticType;
 import org.classified_event_aggregation.domain.LogSequenceStatistics;
+import org.classified_event_aggregation.domain.Threshold;
+import org.classified_event_aggregation.persistence.cassandra.LogMessageStore;
 import org.classified_event_aggregation.persistence.mysql.ThresholdRepository;
 import org.classified_event_aggregation.service.StatisticService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.util.UriUtils;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 
 @Controller
 public class Action {
 
 	@Autowired
 	private StatisticService statisticService;
+	
+	@Autowired
+	private LogMessageStore logMessageStore;
 	
 	@Autowired
 	private ThresholdRepository thresholdRepository;
@@ -50,7 +61,42 @@ public class Action {
 	}
 	
 	@RequestMapping("/application/monitor")
-	public String monitorApplication(){
+	public String monitorApplication(
+			@RequestParam String applicationName,
+			@RequestParam(required = false) String sequenceName,
+			Model model
+		){
+		List<LogSequenceStatistics> durationStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION);
+		durationStatistics = Lists.newArrayList(Iterables.filter(durationStatistics, new Predicate<LogSequenceStatistics>() {
+			@Override
+			public boolean apply(LogSequenceStatistics lss) {
+				return lss.getStatistics().get("stdScore").getAsDouble() >= 6.0;
+			}
+		}));
+		
+		List<LogSequenceStatistics> exceptionStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS);
+		exceptionStatistics = Lists.newArrayList(Iterables.filter(exceptionStatistics, new Predicate<LogSequenceStatistics>() {
+			@Override
+			public boolean apply(LogSequenceStatistics lss) {
+				return lss.getStatistics().get("stdScore").getAsDouble() >= 6.0;
+			}
+		}));
+		
+		Function<LogSequenceStatistics, Long> orderByTimestamp = new Function<LogSequenceStatistics, Long>() {
+			@Override
+			public Long apply(LogSequenceStatistics arg0) {
+				return arg0.getEndTimestamp();
+			}
+		};
+		Ordering<LogSequenceStatistics> ordering = Ordering.natural().onResultOf(orderByTimestamp);
+		ImmutableSortedSet<LogSequenceStatistics> orderedList = ImmutableSortedSet.orderedBy(ordering).addAll(durationStatistics).addAll(exceptionStatistics).build();
+		model.addAttribute("logSequenceStatistics", orderedList);
+		
+		Map<String, List<String>> logMessagesBySequenceId = new HashMap<String, List<String>>();
+		for (LogSequenceStatistics logSequenceStatistics : orderedList) {
+			logMessagesBySequenceId.put(logSequenceStatistics.getSequenceId(), logMessageStore.getLogMessages(logSequenceStatistics.getSequenceId()));
+		}
+		model.addAttribute("logMessagesBySequenceId", logMessagesBySequenceId);
 		return "monitor";
 	}
 
@@ -70,7 +116,7 @@ public class Action {
 		List<LogSequenceStatistics> logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION);
 		JsonArray arr = new JsonArray();
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
-			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(DimensionlessStatisticType.STANDARD_SCORE_OF_SEQUENCE_DURATION.name()));
+			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive("stdScore"));
 		}
 		dimensionlessStatisticType1.put("stats", arr);
 
@@ -82,8 +128,9 @@ public class Action {
 		logSequenceStatistics = statisticService.getDerivedStatistic(applicationName, sequenceName, 1000, -1L, -1L, true, DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS);
 		arr = new JsonArray();
 		for (LogSequenceStatistics logSequenceStatisticsObject : logSequenceStatistics) {
-			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(DimensionlessStatisticType.STANDARD_SCORE_OF_NUMBER_OF_EXCEPTIONS.name()));
+			arr.add(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive("stdScore"));
 		}
+		
 		dimensionlessStatisticType2.put("stats", arr);
 
 		dimensionlessStatistics.add(dimensionlessStatisticType1);
@@ -156,7 +203,7 @@ public class Action {
 			}
 			sb.append(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive("standard_deviation").getAsDouble());
 			sb.append(",");
-			sb.append(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive(dimensionlessStatisticType.name()).getAsDouble());
+			sb.append(logSequenceStatisticsObject.getStatistics().getAsJsonPrimitive("stdScore").getAsDouble());
 			sb.append("\n");
 		}
 		

@@ -1,6 +1,8 @@
 package org.classified_event_aggregation.domain;
 
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -24,7 +26,7 @@ public class Threshold {
 	@GeneratedValue
 	private Long id;
 	
-	@Size(max = 255)
+	@Enumerated(EnumType.STRING)
 	private DimensionlessStatisticType dimensionlessStatisticType;
 	
 	@Size(max = 255)
@@ -33,7 +35,18 @@ public class Threshold {
 	@Size(max = 255)
 	private String sequenceName;
 	
-	private Double thresholdValue;
+	private double thresholdValue;
+	
+	public Threshold() {
+	}
+	
+	public Threshold(DimensionlessStatisticType dimensionlessStatisticType,
+			String applicationName, String sequenceName, double thresholdValue) {
+		this.dimensionlessStatisticType = dimensionlessStatisticType;
+		this.applicationName = applicationName;
+		this.sequenceName = sequenceName;
+		this.thresholdValue = thresholdValue;
+	}
 
 	public Long getId() {
 		return id;
@@ -68,7 +81,7 @@ public class Threshold {
 		this.sequenceName = sequenceName;
 	}
 
-	public Double getThresholdValue() {
+	public double getThresholdValue() {
 		return thresholdValue;
 	}
 
